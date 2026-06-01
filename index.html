@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es-ES">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ══ SEO PRIMARIO ══ -->
+    <title>Pomodoro Timer Online — Técnica Pomodoro 50/10 y Clásico 25/5 | Sin registro</title>
+    <meta name="description" content="Temporizador Pomodoro gratuito y sin anuncios. Ciclos de trabajo y descanso configurables (25/5, 50/10, Deep Work), sonidos ambientales, modo oscuro y funciona sin conexión como PWA. ¡Empieza en segundos!">
+    <meta name="keywords" content="pomodoro timer, temporizador pomodoro, técnica pomodoro, pomodoro online, timer trabajo, focus timer, deep work, productividad, concentración, 25 5 pomodoro, 50 10 pomodoro">
+    <meta name="author" content="Pomodoro Timer">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical" href="https://TU-DOMINIO.com/">
+
+    <!-- ══ OPEN GRAPH (Facebook, WhatsApp, LinkedIn) ══ -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Pomodoro Timer">
+    <meta property="og:title" content="Pomodoro Timer Online — Gratis, sin anuncios, funciona offline">
+    <meta property="og:description" content="Temporizador Pomodoro configurable con sonidos ambientales, modo oscuro y presets (Clásico, 50/10, Deep Work). Instálalo como app sin registro.">
+    <meta property="og:url" content="https://TU-DOMINIO.com/">
+    <meta property="og:image" content="https://TU-DOMINIO.com/icons/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Pomodoro Timer — Interfaz con temporizador 50:00 y sonidos ambientales">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:locale:alternate" content="es_MX">
+    <meta property="og:locale:alternate" content="es_AR">
+
+    <!-- ══ TWITTER / X CARDS ══ -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pomodoro Timer Online — Gratis, sin anuncios, offline">
+    <meta name="twitter:description" content="Temporizador Pomodoro con sonidos ambientales, modo oscuro y presets. Funciona sin conexión como PWA. Sin registro, sin anuncios.">
+    <meta name="twitter:image" content="https://TU-DOMINIO.com/icons/og-image.png">
+    <meta name="twitter:image:alt" content="Pomodoro Timer online, gratis y sin anuncios">
+
+    <!-- ══ PWA ══ -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#d32f2f" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1a0e10" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Pomodoro">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="./icons/icon-pomodoro.svg">
+
+    <!-- ══ FAVICONS ══ -->
+    <link rel="icon" type="image/svg+xml" href="./icons/icon-pomodoro.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-pomodoro.png">
+
+    <!-- ══ RENDIMIENTO — preconectar CDNs críticas ══ -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+    <!-- ══ DATOS ESTRUCTURADOS JSON-LD ══ -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pomodoro Timer",
+        "alternateName": ["Temporizador Pomodoro", "Timer Pomodoro Online"],
+        "url": "https://TU-DOMINIO.com/",
+        "description": "Temporizador Pomodoro gratuito y sin anuncios con ciclos configurables, sonidos ambientales (lluvia, bosque, océano), modo oscuro y soporte offline como PWA.",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+        },
+        "featureList": [
+            "Ciclos de trabajo y descanso configurables",
+            "Presets Clásico 25/5, 50/10 y Deep Work 90/20",
+            "Sonidos ambientales: lluvia, bosque, océano, ruido rosa y blanco",
+            "Modo oscuro automático",
+            "Funciona sin conexión (PWA instalable)",
+            "Sin registro ni anuncios"
+        ],
+        "screenshot": "https://TU-DOMINIO.com/icons/og-image.png",
+        "inLanguage": ["es"]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "¿Qué es la técnica Pomodoro?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "La técnica Pomodoro es un método de gestión del tiempo que divide el trabajo en intervalos (normalmente 25 minutos) separados por descansos cortos (5 minutos). Mejora el enfoque y reduce la fatiga mental."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "¿Este temporizador Pomodoro es gratis?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sí, completamente gratuito y sin anuncios. No necesitas registrarte para usarlo."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "¿Funciona sin conexión a internet?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sí. Puedes instalarlo como Progressive Web App (PWA) en tu dispositivo y usarlo sin conexión, incluyendo los sonidos ambientales que hayas guardado previamente."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "¿Cuáles son los presets disponibles?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Tienes tres presets: Clásico (25 min trabajo / 5 min descanso), 50/10 (50 min trabajo / 10 min descanso) y Deep Work (90 min trabajo / 20 min descanso)."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <link rel="stylesheet" href="./pomodoro.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Librerías -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js" defer></script>
+</head>
+<body>
+    <main>
+       
+        <!-- Botones superiores -->
+        <div class="top-buttons">
+            <button id="install-btn" class="theme-toggle install-btn hidden" aria-label="Instalar aplicación" title="Instalar en escritorio">
+                <i class="fas fa-download"></i>
+            </button>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+
+        <div id="ciclos-container">
+            <h1>Pomodoro Timer</h1>
+            <p class="config-subtitle">Configura tu sesión de trabajo</p>
+
+            <div class="config-grid">
+                <!-- Trabajo -->
+                <div class="config-card work-card">
+                    <div class="config-card-label">
+                        <i class="fas fa-brain"></i> Trabajo
+                    </div>
+                    <div class="time-input-group">
+                        <button class="time-btn minus" data-target="work-minutes" aria-label="Reducir">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <div class="time-input-wrap">
+                            <input type="number" id="work-minutes" class="time-input" value="50" min="1" max="180" aria-label="Minutos de trabajo">
+                            <span class="time-unit">min</span>
+                        </div>
+                        <button class="time-btn plus" data-target="work-minutes" aria-label="Aumentar">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Descanso -->
+                <div class="config-card break-card">
+                    <div class="config-card-label">
+                        <i class="fas fa-mug-hot"></i> Descanso
+                    </div>
+                    <div class="time-input-group">
+                        <button class="time-btn minus" data-target="break-minutes" aria-label="Reducir">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <div class="time-input-wrap">
+                            <input type="number" id="break-minutes" class="time-input" value="10" min="1" max="60" aria-label="Minutos de descanso">
+                            <span class="time-unit">min</span>
+                        </div>
+                        <button class="time-btn plus" data-target="break-minutes" aria-label="Aumentar">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ciclos -->
+            <div class="config-cycles">
+                <label for="ciclos-input" class="cycles-label">
+                    <i class="fas fa-repeat"></i> Número de ciclos
+                </label>
+                <div class="time-input-group cycles-group">
+                    <button class="time-btn minus" data-target="ciclos-input" aria-label="Reducir">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <div class="time-input-wrap">
+                        <input type="number" id="ciclos-input" class="time-input" value="4" min="1" max="20" aria-label="Número de ciclos">
+                        <span class="time-unit" id="cycles-unit-label">ciclos</span>
+                    </div>
+                    <button class="time-btn plus" data-target="ciclos-input" aria-label="Aumentar">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <p class="config-summary" id="config-summary">Total estimado: <strong>4h 0min</strong></p>
+            </div>
+
+            <!-- Presets -->
+            <div class="presets-row">
+                <span class="presets-label">Presets:</span>
+                <button class="preset-btn" data-work="25" data-break="5" data-cycles="4">Clásico</button>
+                <button class="preset-btn" data-work="50" data-break="10" data-cycles="4">50/10</button>
+                <button class="preset-btn" data-work="90" data-break="20" data-cycles="3">Deep Work</button>
+            </div>
+
+            <button id="start-btn" class="start-btn">
+                <i class="fas fa-play"></i> Comenzar
+            </button>
+        </div>
+
+        <!-- Sonido Ambiental - siempre visible -->
+<div id="ambient-panel" class="ambient-controls">
+    <select id="ambient-select" class="ambient-select" aria-label="Sonido ambiental">
+        <option value="none">🎵 Sin ambiental</option>
+        <option value="rain">🌧️ Lluvia</option>
+        <option value="pink">🌸 Ruido Rosa</option>
+        <option value="white">⚪ Ruido Blanco</option>
+        <option value="forest">🌲 Bosque</option>
+        <option value="ocean">🌊 Océano</option>
+    </select>
+    
+    <div class="volume-container">
+        <button id="ambient-toggle" class="ambient-btn" aria-label="Activar/Desactivar sonido">
+            <i class="fas fa-volume-mute"></i>
+        </button>
+        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45">
+    </div>
+</div>
+
+        <!-- Banner descarga offline -->
+        <div id="offline-sound-banner" class="offline-banner hidden">
+            <div style="width:100%">
+                <span><i class="fas fa-wifi-slash"></i> Guarda <strong id="offline-sound-name"></strong> para escuchar sin conexión</span>
+                <div class="offline-progress-wrap" id="offline-progress-wrap">
+                    <div class="offline-progress-bar" id="offline-progress-bar"></div>
+                </div>
+            </div>
+            <div class="offline-banner-btns">
+                <button id="offline-download-btn" class="offline-btn download">
+                    <i class="fas fa-download"></i> Guardar offline
+                </button>
+                <button id="offline-dismiss-btn" class="offline-btn dismiss">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="countdown" class="countdown">
+            <!-- Badge de modo — visible tanto en trabajo como en descanso -->
+            <div class="estado mode-work">
+                <span id="modo-actual">TRABAJO</span>
+            </div>
+
+            <!-- Trabajo -->
+            <div id="trabajo-container">
+                <h1 id="countdown-text">50:00</h1>
+            </div>
+
+            <!-- Descanso -->
+            <div id="descanso-container" class="hidden">
+                <h1 id="descanso-time">10:00</h1>
+                <small id="descanso-label">10 minutos de descanso</small>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="controls">
+                <button id="pause-btn" class="control-btn">
+                    <i class="fas fa-pause"></i>
+                    <span>Pausar</span>
+                </button>
+                <button id="reset-btn" class="control-btn reset">
+                    <i class="fas fa-redo"></i> Reiniciar
+                </button>
+            </div>
+
+            <div class="info-ciclo">
+                Ciclo <span id="ciclo-actual">1</span> / <span id="ciclo-total">4</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ══ CONTENIDO SEO INDEXABLE ══ -->
+    <section class="seo-content" aria-label="Información sobre la técnica Pomodoro">
+        <h2>¿Qué es el Temporizador Pomodoro?</h2>
+        <p>
+            La <strong>técnica Pomodoro</strong> es un método de productividad que divide el trabajo en
+            bloques de tiempo concentrado separados por descansos cortos. Nuestro
+            <strong>timer Pomodoro online</strong> te permite configurar la duración exacta de cada ciclo,
+            elegir entre presets populares como el <strong>Clásico 25/5</strong>, el <strong>50/10</strong>
+            o el <strong>Deep Work 90/20</strong>, y escuchar sonidos ambientales para mejorar tu concentración.
+        </p>
+    </section>
+
+    <!-- ==================== FOOTER NAV ==================== -->
+    <footer class="footer-nav">
+        <nav>
+            <button class="footer-btn" data-modal="modal-about-me">Sobre mí</button>
+            <button class="footer-btn" data-modal="modal-about-app">Sobre la app</button>
+            <button class="footer-btn" data-modal="modal-donations">Donaciones</button>
+            <button class="footer-btn" data-modal="modal-projects">Otros proyectos</button>
+            <button class="footer-btn" data-modal="modal-suggestions">Sugerencias</button>
+        </nav>
+    </footer>
+
+    <!-- ==================== MODALES ==================== -->
+
+    <!-- Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+    <!-- Sobre mí -->
+    <div id="modal-about-me" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-about-me-title">
+        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <h2 id="modal-about-me-title">Sobre mí</h2>
+        <div class="modal-content">
+            <p>👋 ¡Hola! Soy el creador de esta app. Construí este temporizador Pomodoro porque quería una herramienta simple, bonita y que funcionara sin conexión.</p>
+            <br>
+            <p>Si tienes comentarios, ideas o simplemente quieres saludar, usa el formulario de <strong>Sugerencias</strong> — ¡leo todo!</p>
+        </div>
+    </div>
+
+    <!-- Sobre la app -->
+    <div id="modal-about-app" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-about-app-title">
+        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <h2 id="modal-about-app-title">Sobre la app</h2>
+        <div class="modal-content">
+            <p>🍅 <strong>Pomodoro Timer</strong> es una Progressive Web App (PWA) que puedes instalar en tu dispositivo y usar sin conexión.</p>
+            <br>
+            <p><strong>Características:</strong></p>
+            <ul style="margin: 10px 0 0 18px; line-height: 2">
+                <li>Ciclos de trabajo y descanso configurables</li>
+                <li>Presets rápidos (Clásico, 50/10, Deep Work)</li>
+                <li>Sonidos ambientales con caché offline</li>
+                <li>Modo oscuro automático</li>
+                <li>Notificaciones de fase (cuando el navegador lo permite)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Donaciones -->
+    <div id="modal-donations" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-donations-title">
+        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <h2 id="modal-donations-title">Donaciones</h2>
+        <div class="modal-content">
+            <p>☕ Esta app es completamente gratuita y sin anuncios. Si te resulta útil y quieres apoyar el desarrollo, ¡cualquier aporte es muy bienvenido!</p>
+            <br>
+            <p style="color: var(--text-primary); font-style: italic;">Los enlaces de donación estarán disponibles próximamente. ¡Gracias por tu apoyo!</p>
+        </div>
+    </div>
+
+    <!-- Otros proyectos -->
+    <div id="modal-projects" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-projects-title">
+        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <h2 id="modal-projects-title">Otros proyectos</h2>
+        <div class="modal-content">
+            <p>🚀 Aquí encontrarás mis otros proyectos cuando estén listos.</p>
+            <br>
+            <p style="color: var(--text-primary); font-style: italic;">Próximamente...</p>
+        </div>
+    </div>
+
+    <!-- Sugerencias -->
+    <div id="modal-suggestions" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-suggestions-title">
+        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <h2 id="modal-suggestions-title">Sugerencias</h2>
+        <div class="modal-content">
+            <div class="suggestion-form">
+                <div class="form-group">
+                    <label for="suggestion-email">Tu email <span class="label-optional">(opcional)</span></label>
+                    <input type="email" id="suggestion-email" class="form-input" placeholder="ejemplo@correo.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="suggestion-text">Tu sugerencia</label>
+                    <textarea id="suggestion-text" class="form-input form-textarea" placeholder="Cuéntame qué mejorarías o qué te gustaría ver..." maxlength="500"></textarea>
+                    <span class="char-count"><span id="char-current">0</span>/500</span>
+                </div>
+                <button id="suggestion-submit" class="suggestion-submit-btn">
+                    <i class="fas fa-paper-plane"></i> Enviar sugerencia
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="pomodoro.js"></script>
+    <script>
+        // Registro del Service Worker (PWA offline)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

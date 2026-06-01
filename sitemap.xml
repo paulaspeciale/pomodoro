@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="https://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://TU-DOMINIO.com/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>1.0</priority>
+        <xhtml:link rel="alternate" hreflang="es" href="https://TU-DOMINIO.com/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://TU-DOMINIO.com/"/>
+    </url>
+</urlset>

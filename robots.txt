@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Archivos de audio (no es necesario indexarlos)
+Disallow: /sounds/
+
+Sitemap: https://TU-DOMINIO.com/sitemap.xml
