@@ -44,7 +44,7 @@
 
     <!-- ══ FAVICONS ══ -->
     <link rel="icon" type="image/svg+xml" href="./icons/icon-pomodoro.svg">
-    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-pomodoro.png">
+    <link rel="alternate icon" type="image/svg+xml" href="./icons/favicon.svg">
 
     <!-- ══ RENDIMIENTO — preconectar CDNs críticas ══ -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -211,7 +211,7 @@
                 <span class="presets-label">Presets:</span>
                 <button class="preset-btn" data-work="25" data-break="5" data-cycles="4">Clásico</button>
                 <button class="preset-btn" data-work="50" data-break="10" data-cycles="4">50/10</button>
-                <button class="preset-btn" data-work="90" data-break="20" data-cycles="3">Deep Work</button>
+                <button class="preset-btn" data-work="90" data-break="20" data-cycles="3">Deep Work 90/20</button>
             </div>
 
             <button id="start-btn" class="start-btn">
@@ -342,7 +342,7 @@
             <p><strong>Características:</strong></p>
             <ul style="margin: 10px 0 0 18px; line-height: 2">
                 <li>Ciclos de trabajo y descanso configurables</li>
-                <li>Presets rápidos (Clásico, 50/10, Deep Work)</li>
+                <li>Presets rápidos (Clásico, 50/10, Deep Work 90/20)</li>
                 <li>Sonidos ambientales con caché offline</li>
                 <li>Modo oscuro automático</li>
                 <li>Notificaciones de fase (cuando el navegador lo permite)</li>
@@ -399,7 +399,8 @@
         // Registro del Service Worker (PWA offline)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
+                const swVersion = Date.parse(document.lastModified) || Date.now();
+                navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
                     .catch(err => console.warn('SW registration failed:', err));
             });
         }

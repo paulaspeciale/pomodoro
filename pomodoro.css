@@ -41,6 +41,7 @@ body {
     justify-content: center;
     align-items: flex-start;  /* evita overflow en landscape/viewport bajo */
     padding: 20px;
+    padding-top: 80px; /* espacio para los botones superiores position:absolute */
     background: var(--bg-primary);
     color: var(--text-primary);
     transition: background 0.8s ease;

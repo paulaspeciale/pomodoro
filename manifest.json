@@ -20,10 +20,10 @@
       "purpose": "any"
     },
     {
-      "src": "./icons/icon-pomodoro.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "./icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -32,14 +32,14 @@
       "short_name": "Clásico 25/5",
       "description": "Inicia un ciclo Pomodoro clásico de 25 minutos",
       "url": "./index.html?preset=classic&source=shortcut",
-      "icons": [{ "src": "./icons/icon-pomodoro.png", "sizes": "96x96" }]
+      "icons": [{ "src": "./icons/icon-pomodoro.svg", "sizes": "any" }]
     },
     {
       "name": "Iniciar Deep Work",
       "short_name": "Deep Work",
       "description": "Inicia una sesión Deep Work de 90 minutos",
       "url": "./index.html?preset=deepwork&source=shortcut",
-      "icons": [{ "src": "./icons/icon-pomodoro.png", "sizes": "96x96" }]
+      "icons": [{ "src": "./icons/icon-pomodoro.svg", "sizes": "any" }]
     }
   ]
 }

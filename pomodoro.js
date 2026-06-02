@@ -14,6 +14,8 @@ let ciclosTotales = 0, cicloActual = 0;
 let notificationsEnabled = false;
 let sessionFinished = false;
 let isTransitioning = false; // evita doble transición de fase en el mismo tick
+let hiddenAt = null;
+let timerWasRunningWhenHidden = false;
 let workMinutes = 50;
 let breakMinutes = 10;
 // Flag para suprimir la transición CSS en el primer frame de cada fase
@@ -21,6 +23,8 @@ let breakMinutes = 10;
 let _suppressProgressTransition = false;
 // Guard para evitar duplicar el DOM de pantalla final si mostrarPantallaFin se llama dos veces
 let _finScreenRendered = false;
+// Referencia al interval de confetti para poder cancelarlo si el usuario reinicia
+let _confettiInterval = null;
 
 // ==================== SONIDO AMBIENTAL ====================
 let ambientSound  = null;
@@ -42,10 +46,11 @@ function syncAmbientUI() {
     const toggle = document.getElementById('ambient-toggle');
     const slider = document.getElementById('volume-slider');
     if (!toggle || !slider) return;
-    // Show volume-up while loading (currentAmbient set but Howl not playing yet)
-    // so the icon doesn't flicker to mute during the load phase.
-    const isActive = (ambientSound && ambientSound.playing()) ||
-                     (currentAmbient && ambientSound && !userMutedAmbient);
+    // El sonido está activo si está reproduciéndose ahora mismo,
+    // O si hay uno cargando (currentAmbient set, Howl instanciado, usuario no muteó).
+    // No incluir el caso de error: si onloaderror limpió ambientSound, isActive debe ser false.
+    const isActive = ambientSound && (ambientSound.playing() ||
+                     (currentAmbient && !userMutedAmbient && ambientSound.state() !== 'unloaded'));
     toggle.innerHTML = isActive
         ? '<i class="fas fa-volume-up"></i>'
         : '<i class="fas fa-volume-mute"></i>';
@@ -182,6 +187,10 @@ async function playAmbient(type) {
             else syncAmbientUI(); // actualizar ícono aunque no se reproduzca
         }
     });
+    if (currentAmbient !== capturedType) {
+        try { localSound.unload(); } catch (_) {}
+        return;
+    }
     ambientSound = localSound;
 }
 
@@ -790,13 +799,15 @@ function launchVictoryConfetti() {
     // La librería se carga con `defer`; si el timer termina muy rápido
     // (ej. en tests con 1 min) puede que aún no esté disponible en window.
     if (typeof confetti !== 'function') return;
+    // Cancelar un confetti anterior si el usuario inicia sesiones muy rápido
+    if (_confettiInterval) { clearInterval(_confettiInterval); _confettiInterval = null; }
     confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
     const end = Date.now() + 4200;
-    const iv  = setInterval(() => {
-        if (Date.now() >= end) return clearInterval(iv);
+    _confettiInterval = setInterval(() => {
+        if (Date.now() >= end) { clearInterval(_confettiInterval); _confettiInterval = null; return; }
         // Re-verificar en cada tick: la librería puede no estar disponible
         // si el script se descargó o falló después del primer disparo.
-        if (typeof confetti !== 'function') return clearInterval(iv);
+        if (typeof confetti !== 'function') { clearInterval(_confettiInterval); _confettiInterval = null; return; }
         confetti({
             particleCount: 80,
             angle:  Math.random() * 60 + 30,
@@ -807,21 +818,9 @@ function launchVictoryConfetti() {
 }
 
 // ==================== NOTIFICACIONES ====================
-async function initNotifications() {
+function initNotifications() {
     if (!('Notification' in window)) return;
-    // Usar feature-detect en lugar de UA sniffing: iOS Safari < 16.4 no expone
-    // Notification.requestPermission, por lo que el check anterior ya lo cubre.
-    // En iPadOS 16.4+ con PWA instalada las notificaciones sí funcionan.
-    if (typeof Notification.requestPermission !== 'function') return;
-    if (Notification.permission === 'granted') { notificationsEnabled = true; }
-    else if (Notification.permission !== 'denied') {
-        try {
-            const perm = await Notification.requestPermission();
-            notificationsEnabled = perm === 'granted';
-        } catch (e) {
-            console.warn('No se pudo solicitar permiso de notificaciones:', e);
-        }
-    }
+    notificationsEnabled = Notification.permission === 'granted';
     // Re-sincronizar si el usuario concede permisos desde config del navegador
     // mientras la app está abierta (visibilitychange es el momento más fiable)
     document.addEventListener('visibilitychange', () => {
@@ -829,6 +828,24 @@ async function initNotifications() {
             notificationsEnabled = Notification.permission === 'granted';
         }
     });
+}
+
+async function requestNotificationPermissionOnUserGesture() {
+    if (!('Notification' in window)) return;
+    notificationsEnabled = Notification.permission === 'granted';
+    if (notificationsEnabled || Notification.permission === 'denied') return;
+
+    // Usar feature-detect en lugar de UA sniffing: iOS Safari < 16.4 no expone
+    // Notification.requestPermission, por lo que el check anterior ya lo cubre.
+    // En iPadOS 16.4+ con PWA instalada las notificaciones sí funcionan.
+    if (typeof Notification.requestPermission !== 'function') return;
+
+    try {
+        const perm = await Notification.requestPermission();
+        notificationsEnabled = perm === 'granted';
+    } catch (e) {
+        console.warn('No se pudo solicitar permiso de notificaciones:', e);
+    }
 }
 
 function showNotification(title, body) {
@@ -885,6 +902,38 @@ async function playPhaseChangeSound(isBreak) {
             osc.stop(startTime + 1.1);
         }, 200);
     } catch (e) {}
+}
+
+// ==================== URL PRESETS (shortcuts del manifest PWA) ====================
+// Aplica el preset indicado en ?preset=classic|50-10|deepwork al cargar la app.
+// Sin esto, los shortcuts del manifest.json no hacen nada distinto a abrir la app normal.
+function applyURLPreset() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const preset = params.get('preset');
+        if (!preset) return;
+
+        const presets = {
+            classic:  { work: 25, breakTime: 5,  cycles: 4 },
+            '50-10':  { work: 50, breakTime: 10, cycles: 4 },
+            deepwork: { work: 90, breakTime: 20, cycles: 3 }
+        };
+
+        const cfg = presets[preset.toLowerCase()];
+        if (!cfg) return;
+
+        const wInput = document.getElementById('work-minutes');
+        const bInput = document.getElementById('break-minutes');
+        const cInput = document.getElementById('ciclos-input');
+        if (!wInput || !bInput || !cInput) return;
+
+        wInput.value = cfg.work;
+        bInput.value = cfg.breakTime;
+        cInput.value = cfg.cycles;
+
+        // Disparar events para que updateSummary y syncActivePreset se actualicen
+        [wInput, bInput, cInput].forEach(inp => inp.dispatchEvent(new Event('input')));
+    } catch (_) {}
 }
 
 // ==================== TEMA ====================
@@ -1032,6 +1081,8 @@ function formatTime(seconds) {
 
 // ==================== LÓGICA DEL TIMER ====================
 function iniciarPomodoros() {
+    requestNotificationPermissionOnUserGesture();
+
     const wInput = document.getElementById('work-minutes');
     const bInput = document.getElementById('break-minutes');
     const cInput = document.getElementById('ciclos-input');
@@ -1053,7 +1104,8 @@ function iniciarPomodoros() {
     isPaused      = false;
     sessionFinished = false;
     isTransitioning = false;
-    _finScreenRendered = false;
+    hiddenAt = null;
+    timerWasRunningWhenHidden = false;
     iniciarCicloTrabajo();
 }
 
@@ -1117,6 +1169,20 @@ function startTimer() {
     intervalo = setInterval(tick, 1000);
 }
 
+function completeCurrentPhase() {
+    if (isTransitioning) return;
+    tiempoActual = 0;           // clamp: never go negative
+    isTransitioning = true;     // bloquear antes de clearInterval para cerrar la ventana
+    clearInterval(intervalo);
+    intervalo = null;
+    actualizarPantalla();       // mostrar 00:00 con la fase correcta
+    if (isDescanso) {
+        iniciarCicloTrabajo();
+    } else {
+        iniciarDescanso();
+    }
+}
+
 function tick() {
     if (isPaused || isTransitioning) return;
 
@@ -1124,20 +1190,50 @@ function tick() {
 
     // Transition immediately at zero — don't paint 00:00 for a full second
     if (tiempoActual <= 0) {
-        tiempoActual = 0;           // clamp: never go negative
-        isTransitioning = true;     // bloquear antes de clearInterval para cerrar la ventana
-        clearInterval(intervalo);
-        intervalo = null;
-        actualizarPantalla();       // mostrar 00:00 con la fase correcta
-        if (isDescanso) {
-            iniciarCicloTrabajo();
-        } else {
-            iniciarDescanso();
-        }
+        completeCurrentPhase();
         return;
     }
 
     actualizarPantalla();
+}
+
+function handleTimerVisibilityChange() {
+    if (document.visibilityState === 'hidden') {
+        timerWasRunningWhenHidden = Boolean(intervalo && !isPaused && !isTransitioning && !sessionFinished);
+        hiddenAt = timerWasRunningWhenHidden ? Date.now() : null;
+        if (timerWasRunningWhenHidden) {
+            clearInterval(intervalo);
+            intervalo = null;
+        }
+        return;
+    }
+
+    if (!hiddenAt || !timerWasRunningWhenHidden) return;
+
+    const elapsedSeconds = Math.floor((Date.now() - hiddenAt) / 1000);
+    hiddenAt = null;
+    timerWasRunningWhenHidden = false;
+
+    if (sessionFinished) return;
+
+    if (elapsedSeconds > 0) {
+        tiempoActual = Math.max(0, tiempoActual - elapsedSeconds);
+        _suppressProgressTransition = true;
+        if (tiempoActual <= 0) {
+            completeCurrentPhase();
+            return;
+        }
+        // Solo actualizar pantalla si la sesión sigue activa (completeCurrentPhase
+        // puede haber llamado finalizarTodo() si era el último ciclo)
+        if (!sessionFinished) actualizarPantalla();
+    }
+
+    if (!intervalo && !isPaused && !isTransitioning && !sessionFinished) {
+        startTimer();
+    }
+    if (ambientSound && !userMutedAmbient && !ambientSound.playing()) {
+        ambientSound.play();
+    }
 }
 
 function togglePause() {
@@ -1203,12 +1299,120 @@ function actualizarPantalla() {
     }
 }
 
+function cleanupAudioState() {
+    // Nulificar currentAmbient ANTES de detener el sonido para que cualquier
+    // instancia de playAmbient que esté en un await lo detecte y aborte.
+    currentAmbient = null;
+    userMutedAmbient = false; // Bug fix: restaurar mute manual para la próxima sesión
+    if (ambientSound) {
+        try { ambientSound.stop(); } catch (_) {}
+        try { ambientSound.unload(); } catch (_) {}
+        ambientSound = null;
+    }
+
+    // Cancelar cualquier timeout de transición de fondo pendiente antes de limpiar
+    if (ambientBgTimeout !== null) {
+        clearTimeout(ambientBgTimeout);
+        ambientBgTimeout = null;
+    }
+
+    const ambSel = document.getElementById('ambient-select');
+    if (ambSel) ambSel.value = 'none';
+    setAmbientBg(null);
+    hideBanner();
+    syncAmbientUI();
+
+    if (sharedAudioContext && sharedAudioContext.state !== 'closed') {
+        sharedAudioContext.close().catch(() => {});
+        sharedAudioContext = null;
+    }
+}
+
+function resetSessionState() {
+    clearInterval(intervalo);
+    intervalo = null;
+    // Cancelar confetti si aún está activo
+    if (_confettiInterval) { clearInterval(_confettiInterval); _confettiInterval = null; }
+    sessionFinished = false;
+    isPaused = false;
+    isTransitioning = false;
+    hiddenAt = null;
+    timerWasRunningWhenHidden = false;
+    cicloActual = 0;
+    ciclosTotales = readClampedValue(document.getElementById('ciclos-input'), 1, 20);
+    workMinutes = readClampedValue(document.getElementById('work-minutes'), 1, 180);
+    breakMinutes = readClampedValue(document.getElementById('break-minutes'), 1, 60);
+    isDescanso = false;
+    tiempoActual = workMinutes * 60;
+    tiempoInicial = tiempoActual;
+    _suppressProgressTransition = true;
+
+    cleanupAudioState();
+
+    // Limpiar estado de confirmación de reset si estaba pendiente
+    _resetConfirming = false;
+    if (_resetCancelTimeout) {
+        clearTimeout(_resetCancelTimeout);
+        _resetCancelTimeout = null;
+    }
+    if (_resetClickOutsideHandler) {
+        document.removeEventListener('click', _resetClickOutsideHandler);
+        _resetClickOutsideHandler = null;
+    }
+
+    const finEl = document.getElementById('fin-sesion');
+    if (finEl) finEl.remove();
+    _finScreenRendered = false;
+
+    ciclosContainer.classList.remove('hidden');
+    countdownDiv.classList.remove('active');
+    countdownDiv.classList.add('hidden');
+    countdownDiv.classList.remove('descanso-mode');
+    document.body.classList.remove('timer-paused');
+
+    trabajoContainer.classList.remove('hidden');
+    descansoContainer.classList.add('hidden');
+
+    const estadoEl = countdownDiv.querySelector('.estado');
+    if (estadoEl) {
+        estadoEl.classList.remove('hidden', 'mode-break');
+        estadoEl.classList.add('mode-work');
+    }
+    modoActual.textContent = 'TRABAJO';
+
+    const progressContainer = countdownDiv.querySelector('.progress-container');
+    const controls = countdownDiv.querySelector('.controls');
+    const infoCiclo = countdownDiv.querySelector('.info-ciclo');
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (controls) controls.classList.remove('hidden');
+    if (infoCiclo) infoCiclo.classList.remove('hidden');
+
+    pauseBtn.disabled = false;
+    pauseBtn.style.display = '';
+    pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pausar</span>';
+    pauseBtn.classList.remove('paused');
+    resetBtn.disabled = false;
+    resetBtn.style.display = '';
+    resetBtn.innerHTML = '<i class="fas fa-redo"></i> Reiniciar';
+
+    cicloActualEl.textContent = '1';
+    cicloTotalEl.textContent = ciclosTotales;
+    timerDisplay.textContent = formatTime(tiempoActual);
+    descansoTime.textContent = formatTime(breakMinutes * 60);
+    const descansoLabel = document.getElementById('descanso-label');
+    if (descansoLabel) descansoLabel.textContent = `${breakMinutes} minutos de descanso`;
+    progressBar.style.width = '100%';
+    updateSummary();
+}
+
 function finalizarTodo() {
     clearInterval(intervalo);
     intervalo = null;
     sessionFinished = true;
     isPaused = false; // limpiar estado de pausa por si el timer terminó estando pausado
     isTransitioning = false; // limpiar para no bloquear futuros runs si se reutiliza el estado
+    hiddenAt = null;
+    timerWasRunningWhenHidden = false;
     document.body.classList.remove('timer-paused');
 
     pauseBtn.disabled = true;
@@ -1218,24 +1422,7 @@ function finalizarTodo() {
     resetBtn.style.display = 'none';
     resetBtn.disabled = true;
 
-    // Nulificar currentAmbient ANTES de detener el sonido para que cualquier
-    // instancia de playAmbient que esté en un await lo detecte y aborte.
-    currentAmbient = null;
-    if (ambientSound) {
-        try { ambientSound.stop(); } catch (_) {}
-        try { ambientSound.unload(); } catch (_) {}
-        ambientSound = null;
-    }
-    // Sincronizar el selector con el estado real (currentAmbient = null)
-    const ambSel = document.getElementById('ambient-select');
-    if (ambSel) ambSel.value = 'none';
-    setAmbientBg(null);
-    syncAmbientUI();
-
-    if (sharedAudioContext && sharedAudioContext.state !== 'closed') {
-        sharedAudioContext.close().catch(() => {});
-        sharedAudioContext = null;
-    }
+    cleanupAudioState();
 
     showNotification('🎉 ¡Completado!', 'Has terminado todos los ciclos. ¡Excelente trabajo!');
     launchVictoryConfetti();
@@ -1311,7 +1498,7 @@ function mostrarPantallaFin() {
         countdownDiv.appendChild(finEl);
 
         document.getElementById('nueva-sesion-btn').addEventListener('click', () => {
-            location.reload();
+            resetSessionState();
         });
     }
 
@@ -1327,6 +1514,8 @@ function mostrarPantallaFin() {
 // Permite que removeEventListener siempre elimine exactamente la función registrada,
 // incluso entre llamadas rápidas al botón, sin depender del closure del setTimeout.
 let _resetClickOutsideHandler = null;
+let _resetConfirming = false;
+let _resetCancelTimeout = null;
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1353,11 +1542,18 @@ document.addEventListener('DOMContentLoaded', () => {
     initModals();
     initSuggestionForm();
     initConfigControls();
+    applyURLPreset();
 
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data?.type === 'SW_FALLBACK_ACTIVE') {
+                showToast('Modo offline básico activo. Algunas funciones pueden tardar en cachearse.');
+            }
+        });
+    }
+
+    document.addEventListener('visibilitychange', handleTimerVisibilityChange);
     pauseBtn.addEventListener('click', togglePause);
-
-    let _resetConfirming = false;
-    let _resetCancelTimeout = null; // a nivel de closure para cancelarlo al confirmar
 
     resetBtn.addEventListener('click', () => {
         // Evitar confirm() bloqueante: mostrar confirmacion inline en el propio boton
@@ -1368,7 +1564,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.removeEventListener('click', _resetClickOutsideHandler);
                 _resetClickOutsideHandler = null;
             }
-            location.reload();
+            _resetConfirming = false;
+            resetSessionState();
             return;
         }
 
