@@ -1,7 +1,7 @@
 // sw.js - Service Worker con Workbox + Notificaciones
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
 
-// CACHE_VERSION: actualiza este valor en cada deploy para invalidar el precaché.
+// ⚠️ CACHE_VERSION: DEBE actualizarse en cada deploy para invalidar el precaché.
 // Workbox usa la `revision` de cada entrada para decidir si re-descargar el archivo;
 // si no cambias este valor, los usuarios seguirán viendo la versión antigua en offline
 // aunque hayas subido nuevos assets al servidor.
@@ -10,6 +10,12 @@ const CACHE_VERSION = 'v10-2026-06-01';
 
 if (workbox) {
     console.log('Workbox cargado correctamente');
+
+    // Activate the new SW immediately on install, without waiting for existing
+    // tabs to close. Combined with clients.claim() in activate, this ensures
+    // users always get the latest version after a deploy.
+    workbox.core.skipWaiting();
+    workbox.core.clientsClaim();
 
     // Precaching de archivos esenciales.
     // La `revision` vinculada a CACHE_VERSION garantiza que al actualizar la constante
@@ -64,6 +70,9 @@ if (workbox) {
     // Se usan los nombres exactos de los cachés propios de la app; el caché
     // interno de Workbox (workbox-precache-v2) se preserva implícitamente
     // porque su nombre no empieza por 'pomodoro-'.
+    // Nota: skipWaiting() y clientsClaim() arriba hacen que este activate
+    // se dispare inmediatamente; el waitUntil garantiza que la limpieza
+    // completa antes de que el SW responda a fetch del nuevo cliente.
     self.addEventListener('activate', event => {
         const expectedCaches = [
             'pomodoro-sounds-v1',
@@ -75,9 +84,12 @@ if (workbox) {
                 Promise.all(
                     keys
                         .filter(k => k.startsWith('pomodoro-') && !expectedCaches.includes(k))
-                        .map(k => caches.delete(k))
+                        .map(k => {
+                            console.log('[SW] Eliminando caché obsoleta:', k);
+                            return caches.delete(k);
+                        })
                 )
-            ).then(() => self.clients.claim())
+            )
         );
     });
 

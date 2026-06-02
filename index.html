@@ -153,14 +153,14 @@
                         <i class="fas fa-brain"></i> Trabajo
                     </div>
                     <div class="time-input-group">
-                        <button class="time-btn minus" data-target="work-minutes" aria-label="Reducir">
+                        <button class="time-btn minus" data-target="work-minutes" aria-label="Reducir minutos de trabajo">
                             <i class="fas fa-minus"></i>
                         </button>
                         <div class="time-input-wrap">
-                            <input type="number" id="work-minutes" class="time-input" value="50" min="1" max="180" aria-label="Minutos de trabajo">
+                            <input type="number" id="work-minutes" class="time-input" value="50" min="1" max="180" step="1" aria-label="Minutos de trabajo">
                             <span class="time-unit">min</span>
                         </div>
-                        <button class="time-btn plus" data-target="work-minutes" aria-label="Aumentar">
+                        <button class="time-btn plus" data-target="work-minutes" aria-label="Aumentar minutos de trabajo">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
@@ -172,14 +172,14 @@
                         <i class="fas fa-mug-hot"></i> Descanso
                     </div>
                     <div class="time-input-group">
-                        <button class="time-btn minus" data-target="break-minutes" aria-label="Reducir">
+                        <button class="time-btn minus" data-target="break-minutes" aria-label="Reducir minutos de descanso">
                             <i class="fas fa-minus"></i>
                         </button>
                         <div class="time-input-wrap">
-                            <input type="number" id="break-minutes" class="time-input" value="10" min="1" max="60" aria-label="Minutos de descanso">
+                            <input type="number" id="break-minutes" class="time-input" value="10" min="1" max="60" step="1" aria-label="Minutos de descanso">
                             <span class="time-unit">min</span>
                         </div>
-                        <button class="time-btn plus" data-target="break-minutes" aria-label="Aumentar">
+                        <button class="time-btn plus" data-target="break-minutes" aria-label="Aumentar minutos de descanso">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
@@ -192,14 +192,14 @@
                     <i class="fas fa-repeat"></i> Número de ciclos
                 </label>
                 <div class="time-input-group cycles-group">
-                    <button class="time-btn minus" data-target="ciclos-input" aria-label="Reducir">
+                    <button class="time-btn minus" data-target="ciclos-input" aria-label="Reducir número de ciclos">
                         <i class="fas fa-minus"></i>
                     </button>
                     <div class="time-input-wrap">
-                        <input type="number" id="ciclos-input" class="time-input" value="4" min="1" max="20" aria-label="Número de ciclos">
+                        <input type="number" id="ciclos-input" class="time-input" value="4" min="1" max="20" step="1" aria-label="Número de ciclos">
                         <span class="time-unit" id="cycles-unit-label">ciclos</span>
                     </div>
-                    <button class="time-btn plus" data-target="ciclos-input" aria-label="Aumentar">
+                    <button class="time-btn plus" data-target="ciclos-input" aria-label="Aumentar número de ciclos">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>

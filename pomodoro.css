@@ -278,6 +278,7 @@ body.timer-paused #descanso-time {
 
 .volume-slider {
     width: 110px;
+    min-width: 80px;
     accent-color: var(--accent-work);
     cursor: pointer;
     opacity: 0.85;
@@ -650,14 +651,15 @@ body > main { position: relative; z-index: 1; }
     align-items: center;
 }
 
-/* Separador · entre botones del footer, solo visible si están en la misma línea flex.
-   Se renderiza como un span.footer-sep inyectado por JS entre cada par de botones. */
+/* Separador · entre botones del footer */
 .footer-sep {
     color: var(--border-color);
     font-size: 0.82rem;
     line-height: 1;
     pointer-events: none;
     user-select: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .footer-btn {
@@ -702,6 +704,7 @@ body.dark .footer-btn:hover { background: rgba(255,255,255,0.07); }
     width: min(520px, 92vw);
     max-height: 82vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: var(--card-bg);
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25);

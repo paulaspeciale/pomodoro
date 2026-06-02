@@ -1,4 +1,4 @@
-// pomodoro.js — revision v12 (confetti guard + DOM seguro fin-sesion + notifications feature-detect + reset listener race fix)
+// pomodoro.js — revision v13 (onplayerror + confetti interval guard + AudioContext webkit removal + fin-sesion DOM consistency + resetBtn race fix)
 'use strict';
 
 // ==================== REFS DOM ====================
@@ -42,8 +42,11 @@ function syncAmbientUI() {
     const toggle = document.getElementById('ambient-toggle');
     const slider = document.getElementById('volume-slider');
     if (!toggle || !slider) return;
-    const isPlaying = ambientSound && ambientSound.playing();
-    toggle.innerHTML = isPlaying
+    // Show volume-up while loading (currentAmbient set but Howl not playing yet)
+    // so the icon doesn't flicker to mute during the load phase.
+    const isActive = (ambientSound && ambientSound.playing()) ||
+                     (currentAmbient && ambientSound && !userMutedAmbient);
+    toggle.innerHTML = isActive
         ? '<i class="fas fa-volume-up"></i>'
         : '<i class="fas fa-volume-mute"></i>';
     slider.style.opacity = currentAmbient ? '1' : '0.4';
@@ -137,6 +140,19 @@ async function playAmbient(type) {
         onplay:  () => { if (ambientSound === localSound) syncAmbientUI(); },
         onpause: () => { if (ambientSound === localSound) syncAmbientUI(); },
         onstop:  () => { if (ambientSound === localSound) syncAmbientUI(); },
+        // La política de autoplay puede bloquear la reproducción incluso tras cargar
+        // correctamente. Howler puede desbloquear el contexto de audio en el siguiente
+        // gesto del usuario; registrar el hook 'unlock' para reintentar entonces.
+        onplayerror: (_id, err) => {
+            if (ambientSound !== localSound) return;
+            console.warn(`Error de reproducción: ${ambientOptions[type]?.name}`, err);
+            localSound.once('unlock', () => {
+                if (ambientSound === localSound && !userMutedAmbient && !isPaused) {
+                    localSound.play();
+                }
+            });
+            syncAmbientUI();
+        },
         onloaderror: (id, err) => {
             console.warn(`No se pudo cargar: ${ambientOptions[type].name}`, err);
             // Si este Howl ya fue reemplazado por uno mas nuevo, solo liberarlo
@@ -173,20 +189,20 @@ function toggleAmbientSound() {
     if (!ambientSound || !currentAmbient) return;
 
     if (ambientSound.playing()) {
-        // Sonido reproduciéndose → pausar y marcar mute manual
+        // Sonido reproduciéndose → pausar y marcar como muteado manualmente
         ambientSound.pause();
         userMutedAmbient = true;
     } else if (userMutedAmbient) {
-        // Fix #5: el usuario había silenciado manualmente (incluso durante la carga)
-        // → desmutar y reanudar si el timer no está en pausa
+        // Usuario había muteado → desmutar y reanudar si el timer no está en pausa
         userMutedAmbient = false;
         if (!isPaused) ambientSound.play();
     } else {
-        // Sonido detenido por otra razón (pausa del timer, aún cargando, etc.)
-        // → interpretarlo como mute manual para no activar reproducción
-        // en contra de la intención del usuario
+        // Sonido no reproduciéndose (cargando, pausado por timer, etc.)
+        // En cualquier caso, el click del usuario indica intención de mutear.
+        // Así se evita que el sonido arranque inesperadamente al terminar la carga.
         userMutedAmbient = true;
     }
+    syncAmbientUI();
 }
 
 // ==================== FONDO AMBIENTAL ====================
@@ -696,7 +712,7 @@ function initSuggestionForm() {
             return;
         }
 
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        if (email && !/^[^\s@]+@[^\s@]+(\.[^\s@]+)*\.[^\s@]{2,}$/.test(email)) {
             emailInput.focus();
             emailInput.classList.add('input-error');
             setTimeout(() => emailInput.classList.remove('input-error'), 1200);
@@ -778,6 +794,9 @@ function launchVictoryConfetti() {
     const end = Date.now() + 4200;
     const iv  = setInterval(() => {
         if (Date.now() >= end) return clearInterval(iv);
+        // Re-verificar en cada tick: la librería puede no estar disponible
+        // si el script se descargó o falló después del primer disparo.
+        if (typeof confetti !== 'function') return clearInterval(iv);
         confetti({
             particleCount: 80,
             angle:  Math.random() * 60 + 30,
@@ -832,14 +851,21 @@ async function getAudioContext() {
         }
         return sharedAudioContext;
     }
-    // Solo crear si no existe o fue explícitamente cerrado en finalizarTodo
-    sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // Solo crear si no existe o fue explícitamente cerrado en finalizarTodo.
+    // Se omite el prefijo webkit: está deprecado en todos los navegadores modernos
+    // y Safari ≥ 14.1 expone AudioContext sin prefijo.
+    if (!window.AudioContext) {
+        console.warn('AudioContext no disponible en este navegador.');
+        return null;
+    }
+    sharedAudioContext = new AudioContext();
     return sharedAudioContext;
 }
 
 async function playPhaseChangeSound(isBreak) {
     try {
         const audio = await getAudioContext();
+        if (!audio) return; // AudioContext no disponible en este navegador
         const osc   = audio.createOscillator();
         const gain  = audio.createGain();
         osc.type = 'sine';
@@ -847,6 +873,11 @@ async function playPhaseChangeSound(isBreak) {
         gain.gain.value = 0.4;
         osc.connect(gain).connect(audio.destination);
         osc.start();
+        // Desconectar nodos del AudioGraph tras stop() para evitar acumulación en memoria
+        osc.onended = () => {
+            try { osc.disconnect(); } catch (_) {}
+            try { gain.disconnect(); } catch (_) {}
+        };
         // Capturar currentTime antes del setTimeout para evitar drift
         const startTime = audio.currentTime;
         setTimeout(() => {
@@ -1181,8 +1212,10 @@ function finalizarTodo() {
     document.body.classList.remove('timer-paused');
 
     pauseBtn.disabled = true;
-    // Al terminar la sesión el flujo de confirmación de dos clicks no tiene sentido;
-    // simplificar el reset a un reload directo para no confundir al usuario.
+    // Hide action buttons entirely on session end — disable + hide is cleaner than
+    // showing a greyed-out "Reiniciar" button next to the new "Nueva sesión" button.
+    pauseBtn.style.display = 'none';
+    resetBtn.style.display = 'none';
     resetBtn.disabled = true;
 
     // Nulificar currentAmbient ANTES de detener el sonido para que cualquier
@@ -1264,7 +1297,11 @@ function mostrarPantallaFin() {
             'box-shadow:0 6px 20px rgba(211,47,47,0.35)',
             'transition:all 0.3s ease'
         ].join(';');
-        btn.innerHTML = '<i class="fas fa-redo"></i>';
+        // Construir el contenido del botón íntegramente con el DOM API,
+        // sin mezclar innerHTML y appendChild en el mismo elemento.
+        const btnIcon = document.createElement('i');
+        btnIcon.className = 'fas fa-redo';
+        btn.appendChild(btnIcon);
         btn.appendChild(document.createTextNode(' Nueva sesión'));
 
         finEl.appendChild(emoji);
@@ -1286,7 +1323,12 @@ function mostrarPantallaFin() {
     if (infoCiclo)         infoCiclo.classList.add('hidden');
 }
 
-// ==================== INICIALIZACIÓN ====================
+// Referencia al listener onClickOutside del resetBtn guardada a nivel de módulo.
+// Permite que removeEventListener siempre elimine exactamente la función registrada,
+// incluso entre llamadas rápidas al botón, sin depender del closure del setTimeout.
+let _resetClickOutsideHandler = null;
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // Fix: asignar refs DOM aquí para que sean seguras independientemente
     // de dónde esté el <script> (head con defer, body, etc.)
@@ -1314,38 +1356,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     pauseBtn.addEventListener('click', togglePause);
 
+    let _resetConfirming = false;
+    let _resetCancelTimeout = null; // a nivel de closure para cancelarlo al confirmar
+
     resetBtn.addEventListener('click', () => {
         // Evitar confirm() bloqueante: mostrar confirmacion inline en el propio boton
-        if (resetBtn.dataset.confirming === 'true') {
-            document.removeEventListener('click', onClickOutside);
+        if (_resetConfirming) {
+            // Limpiar el timeout de cancelación antes de recargar
+            if (_resetCancelTimeout) { clearTimeout(_resetCancelTimeout); _resetCancelTimeout = null; }
+            if (_resetClickOutsideHandler) {
+                document.removeEventListener('click', _resetClickOutsideHandler);
+                _resetClickOutsideHandler = null;
+            }
             location.reload();
             return;
         }
-        const originalHTML = resetBtn.innerHTML;
-        resetBtn.dataset.confirming = 'true';
-        resetBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>¿Confirmar?</span>';
-        const cancel = setTimeout(() => {
-            resetBtn.dataset.confirming = 'false';
-            resetBtn.innerHTML = originalHTML;
-            document.removeEventListener('click', onClickOutside);
-        }, 3000);
-        // Si el usuario hace click fuera del boton, cancelar.
-        // La función se declara con nombre para que removeEventListener pueda
-        // eliminar exactamente esta instancia y no acumular listeners en clicks rápidos.
-        function onClickOutside(e) {
-            if (!resetBtn.contains(e.target)) {
-                clearTimeout(cancel);
-                resetBtn.dataset.confirming = 'false';
-                resetBtn.innerHTML = originalHTML;
-                document.removeEventListener('click', onClickOutside);
-            }
+
+        // Limpiar cualquier handler y timeout previos antes de registrar uno nuevo
+        if (_resetCancelTimeout) { clearTimeout(_resetCancelTimeout); _resetCancelTimeout = null; }
+        if (_resetClickOutsideHandler) {
+            document.removeEventListener('click', _resetClickOutsideHandler);
+            _resetClickOutsideHandler = null;
         }
+
+        const originalHTML = resetBtn.innerHTML;
+        _resetConfirming = true;
+        resetBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>¿Confirmar?</span>';
+
+        const cancelConfirm = () => {
+            _resetConfirming = false;
+            _resetCancelTimeout = null;
+            resetBtn.innerHTML = originalHTML;
+            if (_resetClickOutsideHandler) {
+                document.removeEventListener('click', _resetClickOutsideHandler);
+                _resetClickOutsideHandler = null;
+            }
+        };
+
+        _resetCancelTimeout = setTimeout(cancelConfirm, 3000);
+
+        _resetClickOutsideHandler = (e) => {
+            if (!resetBtn.contains(e.target)) {
+                if (_resetCancelTimeout) { clearTimeout(_resetCancelTimeout); _resetCancelTimeout = null; }
+                cancelConfirm();
+            }
+        };
+
         // setTimeout(0) garantiza que el click actual haya terminado de propagarse
         // antes de registrar el listener, evitando que se dispare inmediatamente.
-        // Se elimina el listener previo (si quedara alguno de un click anterior muy rápido)
-        // antes de registrar el nuevo, para que nunca haya más de uno activo a la vez.
-        document.removeEventListener('click', onClickOutside);
-        setTimeout(() => document.addEventListener('click', onClickOutside), 0);
+        setTimeout(() => {
+            if (_resetClickOutsideHandler) {
+                document.addEventListener('click', _resetClickOutsideHandler);
+            }
+        }, 0);
     });
 
     document.addEventListener('keydown', (e) => {
