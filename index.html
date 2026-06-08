@@ -6,10 +6,15 @@
 
     <!-- ══ SEO PRIMARIO ══ -->
     <title>Pomodoro Timer Online — Técnica Pomodoro 50/10 y Clásico 25/5 | Sin registro</title>
-    <meta name="description" content="Temporizador Pomodoro gratuito y sin anuncios. Ciclos de trabajo y descanso configurables (25/5, 50/10, Deep Work), sonidos ambientales, modo oscuro y funciona sin conexión como PWA. ¡Empieza en segundos!">
+    <meta name="description" content="Temporizador Pomodoro gratuito y sin anuncios. Ciclos configurables (25/5, 50/10, Deep Work), sonidos ambientales, modo oscuro y PWA offline. ¡Sin registro!">
     <meta name="keywords" content="pomodoro timer, temporizador pomodoro, técnica pomodoro, pomodoro online, timer trabajo, focus timer, deep work, productividad, concentración, 25 5 pomodoro, 50 10 pomodoro">
     <meta name="author" content="Pomodoro Timer">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <!-- ══ ⚠️  ANTES DE DESPLEGAR: sustituye TU-DOMINIO.com
+         por tu dominio real en todas las etiquetas que siguen (canonical, og:url,
+         og:image, twitter:image, JSON-LD url/screenshot) y también en
+         robots.txt (Sitemap:) y sitemap.xml (<loc>, <xhtml:link>).
+         Búsqueda rápida: grep -r "TU-DOMINIO" .  ══ -->
     <link rel="canonical" href="https://TU-DOMINIO.com/">
 
     <!-- ══ OPEN GRAPH (Facebook, WhatsApp, LinkedIn) ══ -->
@@ -40,17 +45,28 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Pomodoro">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="./icons/icon-pomodoro.svg">
+    <!-- ⚠️ apple-touch-icon.png debe existir en ./icons/ (PNG 180×180 px).
+         Sin este archivo la instalación PWA en iOS falla y el precache del SW
+         lanzará un error. Genera el PNG desde icon-pomodoro.svg antes de desplegar. -->
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+
+    <!-- ══ SEGURIDAD — Content Security Policy ══
+         Ajusta los dominios si añades nuevas fuentes externas.
+         ⚠️ Reemplaza TU-DOMINIO.com por tu dominio real antes de desplegar. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://formsubmit.co https://cdn.cafecito.app; media-src 'self'; manifest-src 'self'; worker-src 'self'">
 
     <!-- ══ FAVICONS ══ -->
-    <link rel="icon" type="image/svg+xml" href="./icons/icon-pomodoro.svg">
-    <link rel="alternate icon" type="image/svg+xml" href="./icons/favicon.svg">
+    <!-- SVG: navegadores modernos (Chrome 80+, Firefox 84+, Safari 16.4+) -->
+    <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+    <!-- PNG: fallback para navegadores sin soporte SVG (Edge legacy, Safari < 16) -->
+    <link rel="icon" type="image/png" sizes="180x180" href="./icons/apple-touch-icon.png">
 
     <!-- ══ RENDIMIENTO — preconectar CDNs críticas ══ -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.cafecito.app">
 
     <!-- ══ DATOS ESTRUCTURADOS JSON-LD ══ -->
     <script type="application/ld+json">
@@ -203,7 +219,7 @@
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
-                <p class="config-summary" id="config-summary">Total estimado: <strong>4h 0min</strong></p>
+                <p class="config-summary" id="config-summary">Total estimado: <strong>3h 50 min</strong></p>
             </div>
 
             <!-- Presets -->
@@ -234,7 +250,7 @@
         <button id="ambient-toggle" class="ambient-btn" aria-label="Activar/Desactivar sonido">
             <i class="fas fa-volume-mute"></i>
         </button>
-        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45">
+        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45" aria-label="Volumen del sonido ambiental">
     </div>
 </div>
 
@@ -312,7 +328,8 @@
             <button class="footer-btn" data-modal="modal-about-app">Sobre la app</button>
             <button class="footer-btn" data-modal="modal-donations">Donaciones</button>
             <button class="footer-btn" data-modal="modal-projects">Otros proyectos</button>
-            <button class="footer-btn" data-modal="modal-suggestions">Sugerencias</button>
+            <button class="footer-btn" data-modal="modal-suggestions">Sugerencias / Comentarios</button>
+            <button class="footer-btn" data-modal="modal-offline-guide">Uso offline</button>
         </nav>
     </footer>
 
@@ -356,8 +373,58 @@
         <h2 id="modal-donations-title">Donaciones</h2>
         <div class="modal-content">
             <p>☕ Esta app es completamente gratuita y sin anuncios. Si te resulta útil y quieres apoyar el desarrollo, ¡cualquier aporte es muy bienvenido!</p>
-            <br>
-            <p style="color: var(--text-primary); font-style: italic;">Los enlaces de donación estarán disponibles próximamente. ¡Gracias por tu apoyo!</p>
+
+            <div class="donation-options">
+
+                <!-- Mercado Pago -->
+                <div class="donation-card">
+                    <div class="donation-card-header">
+                        <span class="donation-icon">💙</span>
+                        <span class="donation-name">Mercado Pago</span>
+                    </div>
+                    <p class="donation-desc">Transferí por alias:</p>
+                    <div class="donation-alias-wrap">
+                        <code class="donation-alias">paula.speciale</code>
+                        <button id="donation-copy-mp" class="donation-copy-btn" aria-label="Copiar alias de Mercado Pago">Copiar</button>
+                    </div>
+                </div>
+
+                <!-- PayPal -->
+                <div class="donation-card">
+                    <div class="donation-card-header">
+                        <span class="donation-icon">🅿️</span>
+                        <span class="donation-name">PayPal</span>
+                    </div>
+                    <div class="donation-placeholder">
+                        <i class="fas fa-image" style="font-size:1.6rem;opacity:0.35"></i>
+                        <span>Imagen de PayPal próximamente</span>
+                    </div>
+                </div>
+
+                <!-- Cafecito -->
+                <div class="donation-card">
+                    <div class="donation-card-header">
+                        <span class="donation-icon">☕</span>
+                        <span class="donation-name">Cafecito</span>
+                    </div>
+                    <a href="https://cafecito.app/paulaspeciale" rel="noopener" target="_blank" class="donation-cafecito-link">
+                        <img srcset="https://cdn.cafecito.app/imgs/buttons/button_5.png 1x, https://cdn.cafecito.app/imgs/buttons/button_5_2x.png 2x, https://cdn.cafecito.app/imgs/buttons/button_5_3.75x.png 3.75x"
+                             src="https://cdn.cafecito.app/imgs/buttons/button_5.png"
+                             alt="Invitame un café en cafecito.app">
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- YouTube -->
+            <div class="donation-youtube">
+                <i class="fab fa-youtube" style="color:#ff0000;font-size:1.2rem"></i>
+                <p>También podés apoyarme suscribiéndote a mi canal de YouTube:</p>
+                <a href="https://www.youtube.com/@leerparasentir" rel="noopener" target="_blank" class="donation-yt-btn">
+                    <i class="fab fa-youtube"></i> @leerparasentir
+                </a>
+            </div>
+
         </div>
     </div>
 
@@ -372,38 +439,190 @@
         </div>
     </div>
 
-    <!-- Sugerencias -->
+    <!-- Sugerencias / Comentarios -->
     <div id="modal-suggestions" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-suggestions-title">
         <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        <h2 id="modal-suggestions-title">Sugerencias</h2>
+        <h2 id="modal-suggestions-title">Sugerencias / Comentarios</h2>
         <div class="modal-content">
-            <div class="suggestion-form">
+            <div class="suggestion-form" id="suggestion-form">
+                <div class="form-group">
+                    <label for="suggestion-name">Tu nombre <span class="label-optional">(opcional)</span></label>
+                    <input type="text" id="suggestion-name" class="form-input" placeholder="Tu nombre" autocomplete="name" maxlength="100">
+                </div>
                 <div class="form-group">
                     <label for="suggestion-email">Tu email <span class="label-optional">(opcional)</span></label>
                     <input type="email" id="suggestion-email" class="form-input" placeholder="ejemplo@correo.com" autocomplete="email">
                 </div>
                 <div class="form-group">
-                    <label for="suggestion-text">Tu sugerencia</label>
+                    <label for="suggestion-text">Mensaje</label>
                     <textarea id="suggestion-text" class="form-input form-textarea" placeholder="Cuéntame qué mejorarías o qué te gustaría ver..." maxlength="500"></textarea>
                     <span class="char-count"><span id="char-current">0</span>/500</span>
                 </div>
-                <button id="suggestion-submit" class="suggestion-submit-btn">
-                    <i class="fas fa-paper-plane"></i> Enviar sugerencia
+                <button id="suggestion-submit" class="suggestion-submit-btn" type="button">
+                    <i class="fas fa-paper-plane"></i> Enviar
                 </button>
+            </div>
+            <!-- Estado de éxito (oculto hasta envío) -->
+            <div id="suggestion-success" class="hidden" style="text-align:center;padding:24px 0">
+                <div style="font-size:2.8rem;margin-bottom:12px">✅</div>
+                <p style="font-weight:700;color:var(--accent-break);font-size:1.05rem;margin-bottom:6px">¡Mensaje enviado!</p>
+                <p style="color:var(--text-secondary);font-size:0.9rem">Gracias por tu feedback. Lo leeré con atención.</p>
             </div>
         </div>
     </div>
 
-    <script src="pomodoro.js"></script>
-    <script>
-        // Registro del Service Worker (PWA offline)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swVersion = Date.parse(document.lastModified) || Date.now();
-                navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
-                    .catch(err => console.warn('SW registration failed:', err));
-            });
-        }
-    </script>
+    <!-- Tutorial offline -->
+    <div id="modal-offline-guide" class="modal modal-offline-guide hidden" role="dialog" aria-modal="true" aria-labelledby="modal-offline-guide-title">
+        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <h2 id="modal-offline-guide-title"><i class="fas fa-wifi-slash" style="font-size:1.1rem;margin-right:8px" aria-hidden="true"></i>Uso offline</h2>
+
+        <div class="modal-content">
+
+            <!-- Selector de plataforma -->
+            <div class="offline-platform-tabs" role="tablist" aria-label="Selecciona tu dispositivo">
+                <button class="ofl-tab active" role="tab" aria-selected="true"  data-tab="android"><i class="fab fa-android"></i> Android</button>
+                <button class="ofl-tab"        role="tab" aria-selected="false" data-tab="ios"><i class="fab fa-apple"></i> iPhone / iPad</button>
+                <button class="ofl-tab"        role="tab" aria-selected="false" data-tab="desktop"><i class="fas fa-desktop"></i> Escritorio</button>
+            </div>
+
+            <!-- ── Android ── -->
+            <div class="ofl-panel" id="ofl-android">
+                <ol class="ofl-steps">
+                    <li>
+                        <span class="ofl-step-num">1</span>
+                        <div>
+                            <strong>Abre la app en Chrome</strong>
+                            <p>Visita esta página desde el navegador Chrome en tu Android.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">2</span>
+                        <div>
+                            <strong>Toca el botón de instalación</strong>
+                            <p>Aparecerá un banner en la parte inferior o un icono <i class="fas fa-download"></i> en la barra superior. Tócalo y confirma <em>"Instalar"</em>.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">3</span>
+                        <div>
+                            <strong>Abre desde el escritorio</strong>
+                            <p>La app aparece en tu pantalla de inicio como cualquier app. Ábrela: funciona sin internet.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">4</span>
+                        <div>
+                            <strong>Guarda los sonidos que uses</strong>
+                            <p>Selecciona un sonido ambiental y pulsa <strong>"Guardar offline"</strong> en el banner que aparece. Solo necesitas conexión una vez por sonido.</p>
+                        </div>
+                    </li>
+                </ol>
+                <div class="ofl-tip">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Si no ves el banner de instalación, en Chrome toca el menú <i class="fas fa-ellipsis-v"></i> y busca <em>"Añadir a pantalla de inicio"</em>.</span>
+                </div>
+            </div>
+
+            <!-- ── iOS ── -->
+            <div class="ofl-panel hidden" id="ofl-ios">
+                <ol class="ofl-steps">
+                    <li>
+                        <span class="ofl-step-num">1</span>
+                        <div>
+                            <strong>Abre la app en Safari</strong>
+                            <p>La instalación solo funciona desde Safari en iPhone y iPad. Chrome en iOS no permite instalar PWAs.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">2</span>
+                        <div>
+                            <strong>Pulsa el botón Compartir</strong>
+                            <p>En la barra inferior (iPhone) o superior (iPad), toca el icono <i class="fas fa-arrow-up-from-bracket"></i> de compartir.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">3</span>
+                        <div>
+                            <strong>Elige "Añadir a pantalla de inicio"</strong>
+                            <p>Desplázate por el menú hasta encontrar esa opción y tócala. Confirma el nombre y pulsa <em>"Añadir"</em>.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">4</span>
+                        <div>
+                            <strong>Guarda los sonidos</strong>
+                            <p>Con la app abierta y conexión activa, selecciona cada sonido que quieras y pulsa <strong>"Guardar offline"</strong>. Ya podrás usarlos sin internet.</p>
+                        </div>
+                    </li>
+                </ol>
+                <div class="ofl-tip">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Las notificaciones offline en iOS requieren iOS 16.4 o superior con la app instalada como PWA.</span>
+                </div>
+            </div>
+
+            <!-- ── Escritorio ── -->
+            <div class="ofl-panel hidden" id="ofl-desktop">
+                <ol class="ofl-steps">
+                    <li>
+                        <span class="ofl-step-num">1</span>
+                        <div>
+                            <strong>Usa Chrome o Edge</strong>
+                            <p>Abre esta página en Google Chrome o Microsoft Edge. Firefox no soporta instalación de PWA en escritorio.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">2</span>
+                        <div>
+                            <strong>Instala desde la barra de direcciones</strong>
+                            <p>Verás un icono <i class="fas fa-download"></i> al final de la barra de URL o el botón de instalación arriba a la derecha en esta página. Haz clic e instala.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">3</span>
+                        <div>
+                            <strong>Ábrela como app independiente</strong>
+                            <p>La app se abre sin barras del navegador, como una aplicación de escritorio. Funciona aunque no haya internet.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ofl-step-num">4</span>
+                        <div>
+                            <strong>Guarda los sonidos ambientales</strong>
+                            <p>Selecciona el sonido que quieras usar y pulsa <strong>"Guardar offline"</strong>. Se descarga una sola vez y queda disponible para siempre.</p>
+                        </div>
+                    </li>
+                </ol>
+                <div class="ofl-tip">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>En Edge, si no ves el botón de instalación, ve a <em>Configuración → Aplicaciones → Instalar este sitio como app</em>.</span>
+                </div>
+            </div>
+
+            <!-- Qué funciona offline -->
+            <div class="ofl-features">
+                <p class="ofl-features-title"><i class="fas fa-check-circle"></i> Qué funciona sin conexión</p>
+                <div class="ofl-features-grid">
+                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Timer completo</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Todos los presets</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Modo oscuro</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Sonidos guardados</span>
+                    <span class="ofl-feat warn"><i class="fas fa-exclamation"></i> Sonidos nuevos requieren conexión la primera vez</span>
+                    <span class="ofl-feat warn"><i class="fas fa-exclamation"></i> Notificaciones: depende del navegador</span>
+                </div>
+            </div>
+
+            <!-- Actualizaciones -->
+            <div class="ofl-update-note">
+                <i class="fas fa-sync-alt"></i>
+                <span>La app se actualiza automáticamente en segundo plano cuando hay conexión. No necesitas reinstalarla.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="pomo-toast" aria-live="polite" aria-atomic="true"></div>
+    <script src="pomodoro.js" defer></script>
+    <script src="sw-register.js" defer></script>
 </body>
 </html>

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- ⚠️  ANTES DE DESPLEGAR: reemplaza TU-DOMINIO.com
+     por tu dominio real en todos los elementos <loc> y <xhtml:link> de este archivo
+     y también en index.html (canonical, og:url, og:image, twitter:image, JSON-LD)
+     y en robots.txt (Sitemap:).
+     Búsqueda rápida: grep -r "TU-DOMINIO" . -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>

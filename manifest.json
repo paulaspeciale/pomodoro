@@ -2,17 +2,37 @@
   "name": "Pomodoro Timer — Técnica Pomodoro Online",
   "short_name": "Pomodoro",
   "description": "Temporizador Pomodoro gratuito con sonidos ambientales, presets configurables y modo offline. Sin anuncios, sin registro.",
+  "id": "./",
+  "scope": "./",
   "start_url": "./index.html?source=pwa",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "theme_color": "#d32f2f",
   "background_color": "#1a1a1a",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "lang": "es-ES",
   "dir": "ltr",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "./icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "./icons/icon-pomodoro.svg",
       "sizes": "any",
@@ -32,14 +52,36 @@
       "short_name": "Clásico 25/5",
       "description": "Inicia un ciclo Pomodoro clásico de 25 minutos",
       "url": "./index.html?preset=classic&source=shortcut",
-      "icons": [{ "src": "./icons/icon-pomodoro.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "./icons/icon-pomodoro.svg",
+          "sizes": "any"
+        }
+      ]
+    },
+    {
+      "name": "Iniciar Pomodoro 50/10",
+      "short_name": "50/10",
+      "description": "Inicia un ciclo de 50 minutos de trabajo y 10 de descanso",
+      "url": "./index.html?preset=50-10&source=shortcut",
+      "icons": [
+        {
+          "src": "./icons/icon-pomodoro.svg",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Iniciar Deep Work",
       "short_name": "Deep Work",
       "description": "Inicia una sesión Deep Work de 90 minutos",
       "url": "./index.html?preset=deepwork&source=shortcut",
-      "icons": [{ "src": "./icons/icon-pomodoro.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "./icons/icon-pomodoro.svg",
+          "sizes": "any"
+        }
+      ]
     }
   ]
 }

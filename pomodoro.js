@@ -1,4 +1,4 @@
-// pomodoro.js — revision v13 (onplayerror + confetti interval guard + AudioContext webkit removal + fin-sesion DOM consistency + resetBtn race fix)
+// pomodoro.js — revision v17 (aria-hidden en ícono offline modal; location.hash preservado en applyURLPreset; comentario de sincronización SOUNDS_CACHE)
 'use strict';
 
 // ==================== REFS DOM ====================
@@ -18,6 +18,10 @@ let hiddenAt = null;
 let timerWasRunningWhenHidden = false;
 let workMinutes = 50;
 let breakMinutes = 10;
+// Timestamp de inicio de la fase actual (Date.now()) y segundos iniciales.
+// Usados para compensar el drift acumulado de setInterval en sesiones largas.
+let phaseStartTime = null;
+let phaseStartSeconds = 0;
 // Flag para suprimir la transición CSS en el primer frame de cada fase
 // (debe declararse aquí con el resto del estado, no abajo en el código)
 let _suppressProgressTransition = false;
@@ -31,6 +35,10 @@ let ambientSound  = null;
 let currentAmbient = null;
 let currentVolume  = 0.45;
 let userMutedAmbient = false;
+// Flag que se activa en cleanupAudioState() para que cualquier rama de playAmbient()
+// que aún tenga awaits pendientes aborte sin crear Howls huérfanos.
+// Se resetea en resetSessionState() antes de que el usuario pueda interactuar de nuevo.
+let audioCleanedUp = false;
 
 const ambientOptions = {
     none:   { name: 'Sin sonido',      url: null },
@@ -54,6 +62,8 @@ function syncAmbientUI() {
     toggle.innerHTML = isActive
         ? '<i class="fas fa-volume-up"></i>'
         : '<i class="fas fa-volume-mute"></i>';
+    // Actualizar aria-label según el estado real para lectores de pantalla
+    toggle.setAttribute('aria-label', isActive ? 'Silenciar sonido ambiental' : 'Activar sonido ambiental');
     slider.style.opacity = currentAmbient ? '1' : '0.4';
 }
 
@@ -80,7 +90,7 @@ function initAmbientControls() {
             ambientSound.volume(currentVolume);
             // Reanudar solo si el usuario sube el volumen, no está muteado manualmente,
             // y el timer no está en pausa (el timer pausa el audio por su cuenta)
-            if (currentVolume > 0 && !ambientSound.playing() && !userMutedAmbient && !isPaused) {
+            if (currentVolume > 0 && !ambientSound.playing() && !userMutedAmbient && !isPaused && !sessionFinished) {
                 ambientSound.play();
             }
             syncAmbientUI();
@@ -132,9 +142,26 @@ async function playAmbient(type) {
     // cambia el selector mientras esperamos la respuesta de la caché.
     const capturedType = type;
     const isCached = await isSoundCached(ambientOptions[capturedType].url);
-    // Si el ambiente cambió durante el await, no actualizar el banner
-    if (currentAmbient !== capturedType) return;
+    // Si el audio fue limpiado (fin/reset de sesión) o el ambiente cambió durante el
+    // await, abortar — no crear Howls huérfanos ni tocar el banner.
+    if (audioCleanedUp || currentAmbient !== capturedType) return;
     updateBannerForSound(capturedType, isCached);
+
+    // Guard adicional antes de instanciar Howl.
+    if (audioCleanedUp || currentAmbient !== capturedType) return;
+
+    // Guard de disponibilidad: Howler se carga con `defer` y puede no estar listo
+    // si el usuario interactúa muy rápido. En ese caso abortar silenciosamente;
+    // el selector quedará en el valor elegido y el usuario puede volver a seleccionar.
+    if (typeof Howl === 'undefined') {
+        console.warn('[playAmbient] Howler aún no está disponible. Reintenta en un momento.');
+        currentAmbient = null;
+        const sel = document.getElementById('ambient-select');
+        if (sel) sel.value = 'none';
+        setAmbientBg(null);
+        syncAmbientUI();
+        return;
+    }
 
     // Capturar referencia local para evitar colisión con cambios rápidos
     const localSound = new Howl({
@@ -152,7 +179,7 @@ async function playAmbient(type) {
             if (ambientSound !== localSound) return;
             console.warn(`Error de reproducción: ${ambientOptions[type]?.name}`, err);
             localSound.once('unlock', () => {
-                if (ambientSound === localSound && !userMutedAmbient && !isPaused) {
+                if (ambientSound === localSound && !userMutedAmbient && !isPaused && !sessionFinished) {
                     localSound.play();
                 }
             });
@@ -181,16 +208,31 @@ async function playAmbient(type) {
                 try { localSound.unload(); } catch (_) {}
                 return;
             }
-            // Respetar mute manual: si el usuario pulsó el botón mientras
-            // el sonido cargaba, no reproducir automáticamente.
-            if (!userMutedAmbient) localSound.play();
+            // Respetar mute manual, pausa del timer y estado de sesión finalizada:
+            // si cualquiera de estas condiciones está activa mientras el sonido
+            // cargaba, no reproducir — el sonido arrancará cuando corresponda.
+            if (!userMutedAmbient && !isPaused && !sessionFinished) localSound.play();
             else syncAmbientUI(); // actualizar ícono aunque no se reproduzca
         }
     });
-    if (currentAmbient !== capturedType) {
+    // Guard final: si el audio fue limpiado (fin/reset) o el selector cambió,
+    // descartar este Howl y salir.
+    if (audioCleanedUp || currentAmbient !== capturedType) {
         try { localSound.unload(); } catch (_) {}
         return;
     }
+    // Destruir el Howl anterior que pudiera existir aún en ambientSound
+    // (puede haber sido asignado por una llamada concurrente que pasó todos
+    // los guards antes que esta). Operar sobre la referencia previa antes de
+    // reasignar para no perder el handle.
+    if (ambientSound && ambientSound !== localSound) {
+        try { ambientSound.stop(); } catch (_) {}
+        try { ambientSound.unload(); } catch (_) {}
+    }
+    // Asignar aquí, tras todos los guards. Los callbacks onload/onerror comprueban
+    // `ambientSound === localSound` para decidir si actuar, por lo que la asignación
+    // debe ocurrir antes de que esos callbacks puedan dispararse. En la práctica
+    // los callbacks son asíncronos (red/caché), así que este orden es seguro.
     ambientSound = localSound;
 }
 
@@ -204,7 +246,7 @@ function toggleAmbientSound() {
     } else if (userMutedAmbient) {
         // Usuario había muteado → desmutar y reanudar si el timer no está en pausa
         userMutedAmbient = false;
-        if (!isPaused) ambientSound.play();
+        if (!isPaused && !sessionFinished) ambientSound.play();
     } else {
         // Sonido no reproduciéndose (cargando, pausado por timer, etc.)
         // En cualquier caso, el click del usuario indica intención de mutear.
@@ -436,6 +478,8 @@ function buildBgScene(bg, type) {
 }
 
 // ==================== CACHE API - SONIDOS OFFLINE ====================
+// ⚠️ SOUNDS_CACHE debe coincidir exactamente con la constante del mismo nombre en sw.js.
+// Si se actualiza la versión aquí, actualizarla también allí (y viceversa).
 const SOUNDS_CACHE = 'pomodoro-sounds-v1';
 
 async function isSoundCached(url) {
@@ -661,20 +705,40 @@ function restorePageScroll() {
 }
 
 function openModal(id) {
+    // Cerrar modales abiertos sin restaurar scroll (se restaurará cuando abra el nuevo)
     closeAllModals(false);
     const modal   = document.getElementById(id);
     const overlay = document.getElementById('modal-overlay');
     if (!modal) { restorePageScroll(); return; }
-    overlay.classList.remove('hidden');
-    modal.classList.remove('hidden');
-    requestAnimationFrame(() => modal.classList.add('open'));
-    document.body.style.overflow = 'hidden';
+    // Esperar al transition del modal previo (250ms) antes de abrir el nuevo,
+    // evitando que overflow:hidden quede atascado si dos modales se solapan.
+    setTimeout(() => {
+        overlay.classList.remove('hidden');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => modal.classList.add('open'));
+        document.body.style.overflow = 'hidden';
+    }, 260);
 }
 
 function closeAllModals(restoreScroll = true) {
     document.querySelectorAll('.modal.open').forEach(m => {
         m.classList.remove('open');
-        setTimeout(() => m.classList.add('hidden'), 250);
+        setTimeout(() => {
+            m.classList.add('hidden');
+            // Si era el modal de sugerencias, restaurar el formulario por si
+            // el estado de éxito estaba visible, para que la próxima apertura
+            // muestre el form vacío y no el mensaje de confirmación.
+            if (m.id === 'modal-suggestions') {
+                const formEl    = document.getElementById('suggestion-form');
+                const successEl = document.getElementById('suggestion-success');
+                if (formEl)    formEl.classList.remove('hidden');
+                if (successEl) successEl.classList.add('hidden');
+                if (_suggestionRestoreTimeout) {
+                    clearTimeout(_suggestionRestoreTimeout);
+                    _suggestionRestoreTimeout = null;
+                }
+            }
+        }, 250);
     });
     document.getElementById('modal-overlay').classList.add('hidden');
     if (restoreScroll) restorePageScroll();
@@ -685,10 +749,57 @@ function isAnyModalOpen() {
 }
 
 // ==================== FORMULARIO SUGERENCIAS ====================
-// Lógica de envío desacoplada — reemplaza con fetch real cuando tengas backend
-function submitSuggestion(email, text) {
-    // TODO: return fetch('/api/suggestions', { method:'POST', body: JSON.stringify({email, text}) });
-    return Promise.reject(new Error('backend-not-configured'));
+// Envío via FormSubmit (https://formsubmit.co) — sin backend propio.
+// El primer envío activa una confirmación por email de FormSubmit (solo una vez).
+const FORMSUBMIT_ENDPOINT = 'https://formsubmit.co/ajax/silentstudybuddy@gmail.com';
+
+// ==================== DONACIONES ====================
+// El onclick inline fue eliminado de index.html para cumplir con la CSP
+// (script-src no incluye 'unsafe-inline'). La lógica vive aquí.
+function initDonations() {
+    const copyBtn = document.getElementById('donation-copy-mp');
+    if (!copyBtn) return;
+
+    copyBtn.addEventListener('click', function () {
+        const alias = 'paula.speciale';
+
+        // Intentar Clipboard API moderna (requiere foco y contexto seguro)
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            navigator.clipboard.writeText(alias)
+                .then(() => {
+                    copyBtn.textContent = '✓ Copiado';
+                    setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+                })
+                .catch(() => _clipboardFallback(alias, copyBtn));
+        } else {
+            _clipboardFallback(alias, copyBtn);
+        }
+    });
+}
+
+// Fallback de copia: crea un <textarea> temporal, lo selecciona y ejecuta
+// document.execCommand('copy'). Funciona en Safari iOS, contextos sin foco
+// y navegadores sin Clipboard API. Si también falla, muestra el toast.
+function _clipboardFallback(text, btn) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        // Fuera de la vista para no causar scroll ni parpadeo
+        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) {
+            btn.textContent = '✓ Copiado';
+            setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+        } else {
+            throw new Error('execCommand returned false');
+        }
+    } catch (_) {
+        showToast('⚠️ No se pudo copiar. Alias: paula.speciale');
+    }
 }
 
 // Timeout de restauración del botón de sugerencias — guardado a nivel de módulo
@@ -696,13 +807,17 @@ function submitSuggestion(email, text) {
 let _suggestionRestoreTimeout = null;
 
 function initSuggestionForm() {
-    const textarea   = document.getElementById('suggestion-text');
+    const textarea    = document.getElementById('suggestion-text');
     const charCurrent = document.getElementById('char-current');
-    const submitBtn  = document.getElementById('suggestion-submit');
+    const submitBtn   = document.getElementById('suggestion-submit');
     if (!textarea || !submitBtn) return;
+    // Guard contra doble inicialización (ej. hot reload en desarrollo)
+    if (submitBtn.dataset.initialized) return;
+    submitBtn.dataset.initialized = 'true';
 
+    // Contador de caracteres
     textarea.addEventListener('input', () => {
-        const len    = textarea.value.length;
+        const len     = textarea.value.length;
         charCurrent.textContent = len;
         const countEl = charCurrent.closest('.char-count');
         countEl.classList.toggle('near-limit', len >= 400 && len < 500);
@@ -710,18 +825,23 @@ function initSuggestionForm() {
     });
 
     submitBtn.addEventListener('click', () => {
+        const nameInput  = document.getElementById('suggestion-name');
         const emailInput = document.getElementById('suggestion-email');
-        const email = emailInput.value.trim();
+        const name  = nameInput  ? nameInput.value.trim()  : '';
+        const email = emailInput ? emailInput.value.trim() : '';
         const text  = textarea.value.trim();
 
+        // Validar mensaje (único campo requerido)
         if (!text) {
             textarea.focus();
             textarea.classList.add('input-error');
             setTimeout(() => textarea.classList.remove('input-error'), 1200);
+            showToast('⚠️ Escribe tu mensaje antes de enviar');
             return;
         }
 
-        if (email && !/^[^\s@]+@[^\s@]+(\.[^\s@]+)*\.[^\s@]{2,}$/.test(email)) {
+        // Validar email solo si se rellenó
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
             emailInput.focus();
             emailInput.classList.add('input-error');
             setTimeout(() => emailInput.classList.remove('input-error'), 1200);
@@ -729,7 +849,7 @@ function initSuggestionForm() {
             return;
         }
 
-        // Cancelar cualquier timeout de restauración pendiente antes de deshabilitar
+        // Cancelar timeout previo si existe
         if (_suggestionRestoreTimeout) {
             clearTimeout(_suggestionRestoreTimeout);
             _suggestionRestoreTimeout = null;
@@ -738,39 +858,54 @@ function initSuggestionForm() {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
-        submitSuggestion(email, text)
-            .then(() => {
-                submitBtn.classList.add('sent');
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> ¡Enviado!';
-                showToast('🎉 ¡Gracias por tu sugerencia!');
-                textarea.value    = '';
-                emailInput.value  = '';
-                charCurrent.textContent = '0';
-                _suggestionRestoreTimeout = setTimeout(() => {
-                    _suggestionRestoreTimeout = null;
-                    closeAllModals();
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('sent');
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar sugerencia';
-                }, 1800);
-            })
-            .catch((err) => {
-                if (err?.message === 'backend-not-configured') {
-                    // Mostrar estado informativo; el botón se habilita de inmediato
-                    // para que el usuario pueda reintentar, pero se restaura el texto tras 3 s.
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-clock"></i> Próximamente';
-                    showToast('⚙️ Las sugerencias no están activas aún. ¡Gracias de todas formas!');
-                    _suggestionRestoreTimeout = setTimeout(() => {
-                        _suggestionRestoreTimeout = null;
-                        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar sugerencia';
-                    }, 3000);
-                } else {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar sugerencia';
-                    showToast('❌ No se pudo enviar. Inténtalo de nuevo.');
-                }
-            });
+        // Construir payload para FormSubmit AJAX
+        const payload = {
+            nombre:  name  || '(no indicado)',
+            email:   email || '(no indicado)',
+            mensaje: text,
+            _subject: 'Nueva sugerencia — Pomodoro Timer',
+            _captcha: 'false'   // deshabilitar captcha de FormSubmit
+        };
+
+        fetch(FORMSUBMIT_ENDPOINT, {
+            method:  'POST',
+            headers: {
+                'Content-Type':  'application/json',
+                'Accept':        'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(() => {
+            // Mostrar pantalla de éxito dentro del modal
+            const formEl    = document.getElementById('suggestion-form');
+            const successEl = document.getElementById('suggestion-success');
+            if (formEl)    formEl.classList.add('hidden');
+            if (successEl) successEl.classList.remove('hidden');
+
+            // Limpiar campos para cuando el modal vuelva a abrirse
+            textarea.value = '';
+            if (nameInput)  nameInput.value  = '';
+            if (emailInput) emailInput.value = '';
+            charCurrent.textContent = '0';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+
+            // Restaurar formulario después de 4 s
+            _suggestionRestoreTimeout = setTimeout(() => {
+                _suggestionRestoreTimeout = null;
+                if (formEl)    formEl.classList.remove('hidden');
+                if (successEl) successEl.classList.add('hidden');
+            }, 4000);
+        })
+        .catch(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+            showToast('❌ No se pudo enviar. Verifica tu conexión e inténtalo de nuevo.');
+        });
     });
 }
 
@@ -821,13 +956,9 @@ function launchVictoryConfetti() {
 function initNotifications() {
     if (!('Notification' in window)) return;
     notificationsEnabled = Notification.permission === 'granted';
-    // Re-sincronizar si el usuario concede permisos desde config del navegador
-    // mientras la app está abierta (visibilitychange es el momento más fiable)
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && 'Notification' in window) {
-            notificationsEnabled = Notification.permission === 'granted';
-        }
-    });
+    // La re-sincronización del permiso cuando el usuario vuelve a la app
+    // se hace en handleTimerVisibilityChange (visibilitychange ya registrado
+    // en DOMContentLoaded), evitando un segundo listener duplicado.
 }
 
 async function requestNotificationPermissionOnUserGesture() {
@@ -933,6 +1064,13 @@ function applyURLPreset() {
 
         // Disparar events para que updateSummary y syncActivePreset se actualicen
         [wInput, bInput, cInput].forEach(inp => inp.dispatchEvent(new Event('input')));
+
+        // Limpiar parámetros de URL para que recargas o URLs copiadas no
+        // re-apliquen el preset ni expongan ?preset= o ?source= al usuario.
+        // Se preserva location.hash por si la app se abre con un fragmento.
+        try {
+            history.replaceState({}, '', location.pathname + location.hash);
+        } catch (_) {}
     } catch (_) {}
 }
 
@@ -1045,9 +1183,12 @@ function initConfigControls() {
 }
 
 function updateSummary() {
-    const w = parseInt(document.getElementById('work-minutes')?.value)  || 50;
-    const b = parseInt(document.getElementById('break-minutes')?.value) || 10;
-    const c = parseInt(document.getElementById('ciclos-input')?.value)  ||  4;
+    const wRaw = parseInt(document.getElementById('work-minutes')?.value);
+    const bRaw = parseInt(document.getElementById('break-minutes')?.value);
+    const cRaw = parseInt(document.getElementById('ciclos-input')?.value);
+    const w = isNaN(wRaw) ? 50 : Math.max(1, wRaw);
+    const b = isNaN(bRaw) ? 10 : Math.max(1, bRaw);
+    const c = isNaN(cRaw) ?  4 : Math.max(1, cRaw);
     // El ultimo ciclo de trabajo no lleva descanso posterior, por eso se resta 1 descanso
     const totalMin = w * c + b * Math.max(0, c - 1);
     const h = Math.floor(totalMin / 60);
@@ -1055,7 +1196,7 @@ function updateSummary() {
     const summaryEl = document.getElementById('config-summary');
     if (!summaryEl) return;
     summaryEl.innerHTML = h > 0
-        ? `Total estimado: <strong>${h}h${m > 0 ? ' ' + m + ' min' : ''}</strong>`
+        ? `Total estimado: <strong>${h}h ${m > 0 ? m + ' min' : '0 min'}</strong>`
         : `Total estimado: <strong>${m} min</strong>`;
 }
 
@@ -1112,13 +1253,12 @@ function iniciarPomodoros() {
 function resetPauseState() {
     isPaused = false;
     pauseBtn.disabled = false;
+    pauseBtn.removeAttribute('aria-disabled');
     pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pausar</span>';
     pauseBtn.classList.remove('paused');
     document.body.classList.remove('timer-paused');
-    // Resume ambient audio when a new phase begins, unless the user explicitly muted it
-    if (ambientSound && !userMutedAmbient && !ambientSound.playing()) {
-        ambientSound.play();
-    }
+    // El resume del audio ambiental se hace en startTimer(), una vez que el
+    // intervalo ya está configurado, para garantizar el orden de operaciones.
 }
 
 function iniciarCicloTrabajo() {
@@ -1166,16 +1306,24 @@ function startTimer() {
     // so any stale tick from the old interval can't sneak through during setup.
     isTransitioning = false;
     clearInterval(intervalo);
+    // Anclar timestamp de inicio para compensar drift acumulado del event loop.
+    // tick() calculará tiempoActual como (phaseStartSeconds - elapsed) en lugar de
+    // decrementar 1 cada vez, eliminando la desviación en sesiones largas (90 min+).
+    phaseStartTime    = Date.now();
+    phaseStartSeconds = tiempoActual;
     intervalo = setInterval(tick, 1000);
+    // Reanudar audio ambiental aquí, con el timer ya configurado, salvo que el
+    // usuario lo haya muteado manualmente o la sesión haya finalizado.
+    if (ambientSound && !userMutedAmbient && !ambientSound.playing() && !sessionFinished) {
+        ambientSound.play();
+    }
 }
 
 function completeCurrentPhase() {
     if (isTransitioning) return;
-    tiempoActual = 0;           // clamp: never go negative
     isTransitioning = true;     // bloquear antes de clearInterval para cerrar la ventana
     clearInterval(intervalo);
     intervalo = null;
-    actualizarPantalla();       // mostrar 00:00 con la fase correcta
     if (isDescanso) {
         iniciarCicloTrabajo();
     } else {
@@ -1184,20 +1332,37 @@ function completeCurrentPhase() {
 }
 
 function tick() {
-    if (isPaused || isTransitioning) return;
+    if (isPaused || isTransitioning || sessionFinished) return;
+    if (!phaseStartTime) return;
 
-    tiempoActual--;
+    // Calcular tiempo restante desde el timestamp de inicio de la fase para
+    // evitar el drift acumulado de setInterval en sesiones largas (90 min+).
+    // El delta se redondea hacia abajo: tiempoActual avanza en segundos enteros
+    // tal como el usuario espera, pero los errores de timing del event loop
+    // no se acumulan entre ticks.
+    const elapsedSinceStart = Math.floor((Date.now() - phaseStartTime) / 1000);
+    tiempoActual = Math.max(0, phaseStartSeconds - elapsedSinceStart);
 
-    // Transition immediately at zero — don't paint 00:00 for a full second
+    // Mostrar 00:00 en pantalla ANTES de hacer transición de fase,
+    // para que el usuario vea el último segundo correctamente.
+    actualizarPantalla();
     if (tiempoActual <= 0) {
         completeCurrentPhase();
-        return;
     }
-
-    actualizarPantalla();
 }
 
 function handleTimerVisibilityChange() {
+    // Guard temprano: si la sesión ya terminó, ignorar cualquier evento de visibilidad.
+    // Sin este guard, una carrera entre finalizarTodo() y el evento 'visible' podía
+    // volver a llamar a completeCurrentPhase() con sessionFinished=true.
+    if (document.visibilityState === 'visible' && sessionFinished) return;
+
+    // Re-sincronizar permiso de notificaciones cuando el usuario vuelve a la app:
+    // puede haberlo concedido desde ajustes del navegador mientras estaba en background.
+    if (document.visibilityState === 'visible' && 'Notification' in window) {
+        notificationsEnabled = Notification.permission === 'granted';
+    }
+
     if (document.visibilityState === 'hidden') {
         timerWasRunningWhenHidden = Boolean(intervalo && !isPaused && !isTransitioning && !sessionFinished);
         hiddenAt = timerWasRunningWhenHidden ? Date.now() : null;
@@ -1216,19 +1381,32 @@ function handleTimerVisibilityChange() {
 
     if (sessionFinished) return;
 
+    // Limpiar cualquier intervalo activo (puede existir si el navegador no
+    // disparó correctamente el evento 'hidden' o en condiciones de carrera)
+    // antes de compensar el tiempo transcurrido.
+    if (intervalo) { clearInterval(intervalo); intervalo = null; }
+
     if (elapsedSeconds > 0) {
         tiempoActual = Math.max(0, tiempoActual - elapsedSeconds);
+        // Reanclar el timestamp de fase para que tick() parta desde el nuevo
+        // tiempoActual ya compensado, sin volver a restar el tiempo en background.
+        phaseStartTime    = Date.now();
+        phaseStartSeconds = tiempoActual;
         _suppressProgressTransition = true;
         if (tiempoActual <= 0) {
-            completeCurrentPhase();
+            // Re-verificar sessionFinished: puede haber cambiado entre el guard
+            // temprano y este punto si finalizarTodo() corrió en el mismo tick.
+            if (!sessionFinished) completeCurrentPhase();
             return;
         }
-        // Solo actualizar pantalla si la sesión sigue activa (completeCurrentPhase
-        // puede haber llamado finalizarTodo() si era el último ciclo)
+        // Solo actualizar pantalla si la sesión sigue activa
         if (!sessionFinished) actualizarPantalla();
     }
 
-    if (!intervalo && !isPaused && !isTransitioning && !sessionFinished) {
+    // Re-verificar antes de reanudar el timer y el audio para cerrar la ventana
+    // de carrera entre el cálculo de elapsed y las funciones de inicio.
+    if (sessionFinished) return;
+    if (!intervalo && !isPaused && !isTransitioning) {
         startTimer();
     }
     if (ambientSound && !userMutedAmbient && !ambientSound.playing()) {
@@ -1246,10 +1424,17 @@ function togglePause() {
     // Fix: usar clase en body para controlar animación pulseTimer correctamente
     document.body.classList.toggle('timer-paused', isPaused);
 
+    if (!isPaused) {
+        // Al reanudar, reanclar el timestamp de inicio para que el tiempo que
+        // estuvo pausado no cuente como tiempo transcurrido en tick().
+        phaseStartTime    = Date.now();
+        phaseStartSeconds = tiempoActual;
+    }
+
     if (ambientSound) {
         if (isPaused) {
             ambientSound.pause();
-        } else if (!userMutedAmbient) {
+        } else if (!userMutedAmbient && !sessionFinished) {
             ambientSound.play();
         }
     }
@@ -1258,12 +1443,11 @@ function togglePause() {
 function snapProgressBar(pct) {
     progressBar.style.transition = 'none';
     progressBar.style.width = `${pct}%`;
-    // Restaurar la transición después de que el navegador pinte el frame
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            progressBar.style.transition = '';
-        });
-    });
+    // Forzar reflow síncrono leyendo offsetWidth — garantiza que el navegador ha
+    // pintado el frame sin transición antes de restaurarla, eliminando la dependencia
+    // del timing del doble-rAF que podía restaurar la transición prematuramente.
+    void progressBar.offsetWidth;
+    progressBar.style.transition = '';
 }
 
 function actualizarPantalla() {
@@ -1300,14 +1484,27 @@ function actualizarPantalla() {
 }
 
 function cleanupAudioState() {
+    // Señalizar a cualquier rama async de playAmbient() que siga en vuelo
+    // (awaits pendientes de isSoundCached o de instanciación de Howl) que debe
+    // abortar sin crear ni asignar Howls. Se resetea en resetSessionState().
+    audioCleanedUp = true;
     // Nulificar currentAmbient ANTES de detener el sonido para que cualquier
     // instancia de playAmbient que esté en un await lo detecte y aborte.
     currentAmbient = null;
     userMutedAmbient = false; // Bug fix: restaurar mute manual para la próxima sesión
-    if (ambientSound) {
-        try { ambientSound.stop(); } catch (_) {}
-        try { ambientSound.unload(); } catch (_) {}
-        ambientSound = null;
+
+    // Capturar la referencia ANTES de nulificar la variable global.
+    // Si playAmbient() tiene un await pendiente y llega a asignar
+    // ambientSound = localSound justo después de que limpiamos aquí,
+    // ese nuevo Howl quedaría huérfano sin unload(). Al operar sobre
+    // la referencia local (toDestroy) nos aseguramos de destruir
+    // exactamente el Howl que existía en el momento de llamar a cleanup,
+    // sin tocar ningún Howl que pueda haberse creado concurrentemente.
+    const toDestroy = ambientSound;
+    ambientSound = null;
+    if (toDestroy) {
+        try { toDestroy.stop(); } catch (_) {}
+        try { toDestroy.unload(); } catch (_) {}
     }
 
     // Cancelar cualquier timeout de transición de fondo pendiente antes de limpiar
@@ -1318,13 +1515,22 @@ function cleanupAudioState() {
 
     const ambSel = document.getElementById('ambient-select');
     if (ambSel) ambSel.value = 'none';
+    const volSlider = document.getElementById('volume-slider');
+    if (volSlider) volSlider.value = currentVolume; // resync visual; currentVolume no cambia
     setAmbientBg(null);
     hideBanner();
     syncAmbientUI();
 
     if (sharedAudioContext && sharedAudioContext.state !== 'closed') {
-        sharedAudioContext.close().catch(() => {});
+        // Retardar el cierre ~1.5 s para que los osciladores activos de
+        // playPhaseChangeSound (duración máxima 1.1 s + 200 ms de delay) terminen
+        // su fade-out antes de que el contexto se cierre. Sin este margen, osc.stop()
+        // se llama sobre un contexto cerrado y lanza una excepción silenciada.
+        const ctxToClose = sharedAudioContext;
         sharedAudioContext = null;
+        setTimeout(() => {
+            if (ctxToClose.state !== 'closed') ctxToClose.close().catch(() => {});
+        }, 1500);
     }
 }
 
@@ -1338,6 +1544,8 @@ function resetSessionState() {
     isTransitioning = false;
     hiddenAt = null;
     timerWasRunningWhenHidden = false;
+    phaseStartTime = null;
+    phaseStartSeconds = 0;
     cicloActual = 0;
     ciclosTotales = readClampedValue(document.getElementById('ciclos-input'), 1, 20);
     workMinutes = readClampedValue(document.getElementById('work-minutes'), 1, 180);
@@ -1348,6 +1556,8 @@ function resetSessionState() {
     _suppressProgressTransition = true;
 
     cleanupAudioState();
+    // Permitir de nuevo la creación de Howls en la próxima sesión
+    audioCleanedUp = false;
 
     // Limpiar estado de confirmación de reset si estaba pendiente
     _resetConfirming = false;
@@ -1388,10 +1598,12 @@ function resetSessionState() {
     if (infoCiclo) infoCiclo.classList.remove('hidden');
 
     pauseBtn.disabled = false;
+    pauseBtn.removeAttribute('aria-disabled');
     pauseBtn.style.display = '';
     pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pausar</span>';
     pauseBtn.classList.remove('paused');
     resetBtn.disabled = false;
+    resetBtn.removeAttribute('aria-disabled');
     resetBtn.style.display = '';
     resetBtn.innerHTML = '<i class="fas fa-redo"></i> Reiniciar';
 
@@ -1413,20 +1625,34 @@ function finalizarTodo() {
     isTransitioning = false; // limpiar para no bloquear futuros runs si se reutiliza el estado
     hiddenAt = null;
     timerWasRunningWhenHidden = false;
+    phaseStartTime = null;
+    phaseStartSeconds = 0;
     document.body.classList.remove('timer-paused');
 
+    // Cancelar confirmación de reset pendiente si el timer termina mientras está activa
+    _resetConfirming = false;
+    if (_resetCancelTimeout) { clearTimeout(_resetCancelTimeout); _resetCancelTimeout = null; }
+    if (_resetClickOutsideHandler) {
+        document.removeEventListener('click', _resetClickOutsideHandler);
+        _resetClickOutsideHandler = null;
+    }
+
     pauseBtn.disabled = true;
+    pauseBtn.setAttribute('aria-disabled', 'true');
     // Hide action buttons entirely on session end — disable + hide is cleaner than
     // showing a greyed-out "Reiniciar" button next to the new "Nueva sesión" button.
     pauseBtn.style.display = 'none';
+    resetBtn.innerHTML = '<i class="fas fa-redo"></i> Reiniciar'; // restaurar en caso de que estuviera en modo ¿Confirmar?
     resetBtn.style.display = 'none';
     resetBtn.disabled = true;
 
-    cleanupAudioState();
-
+    // Actualizar el DOM de pantalla final ANTES de limpiar el audio: así el fade-out
+    // del fondo ambiental (1.2 s) ocurre mientras la pantalla de fin ya está visible,
+    // evitando el flash visual que producía limpiar el fondo antes de pintar la UI.
     showNotification('🎉 ¡Completado!', 'Has terminado todos los ciclos. ¡Excelente trabajo!');
     launchVictoryConfetti();
     mostrarPantallaFin();
+    cleanupAudioState();
 }
 
 function mostrarPantallaFin() {
@@ -1540,8 +1766,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initNotifications();
     initInstallButton();
     initModals();
+    initDonations();
     initSuggestionForm();
     initConfigControls();
+    initOfflineGuide();
     applyURLPreset();
 
     if ('serviceWorker' in navigator) {
@@ -1555,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('visibilitychange', handleTimerVisibilityChange);
     pauseBtn.addEventListener('click', togglePause);
 
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener('click', (evt) => {
         // Evitar confirm() bloqueante: mostrar confirmacion inline en el propio boton
         if (_resetConfirming) {
             // Limpiar el timeout de cancelación antes de recargar
@@ -1599,13 +1827,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // setTimeout(0) garantiza que el click actual haya terminado de propagarse
-        // antes de registrar el listener, evitando que se dispare inmediatamente.
-        setTimeout(() => {
-            if (_resetClickOutsideHandler) {
-                document.addEventListener('click', _resetClickOutsideHandler);
-            }
-        }, 0);
+        // Registrar el handler en el siguiente tick para que este mismo evento click
+        // no lo dispare inmediatamente. Usar capture:false para que los clicks en el
+        // propio botón pasen primero por el listener del botón (que gestiona _resetConfirming)
+        // antes que por este handler externo.
+        // CORRECCIÓN: en lugar de setTimeout(0) —que creaba una ventana de carrera
+        // con dobles clicks muy rápidos—, detenemos la propagación del click actual
+        // y registramos el handler de forma síncrona. Así no hay tick en el que
+        // _resetConfirming sea true pero el handler aún no esté registrado.
+        evt.stopPropagation();
+        document.addEventListener('click', _resetClickOutsideHandler);
     });
 
     document.addEventListener('keydown', (e) => {
@@ -1620,3 +1851,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ==================== TUTORIAL OFFLINE ====================
+function initOfflineGuide() {
+    const modal = document.getElementById('modal-offline-guide');
+    if (!modal) return;
+    // Guard contra doble inicialización (coherente con initSuggestionForm)
+    if (modal.dataset.initialized) return;
+    modal.dataset.initialized = 'true';
+
+    // Auto-detectar plataforma para mostrar la pestaña más relevante por defecto
+    const ua = navigator.userAgent.toLowerCase();
+    let defaultTab = 'android';
+    if (/iphone|ipad|ipod/.test(ua)) {
+        defaultTab = 'ios';
+    } else if (!/android/.test(ua)) {
+        defaultTab = 'desktop';
+    }
+    _activateOfflineTab(modal, defaultTab);
+
+    // Delegación de eventos en las tabs
+    modal.addEventListener('click', (e) => {
+        const tab = e.target.closest('.ofl-tab[data-tab]');
+        if (!tab) return;
+        _activateOfflineTab(modal, tab.dataset.tab);
+    });
+}
+
+function _activateOfflineTab(modal, tabId) {
+    // Actualizar tabs
+    modal.querySelectorAll('.ofl-tab').forEach(btn => {
+        const active = btn.dataset.tab === tabId;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    // Mostrar panel correcto
+    modal.querySelectorAll('.ofl-panel').forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== `ofl-${tabId}`);
+    });
+}
