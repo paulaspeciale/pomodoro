@@ -53,7 +53,7 @@
     <!-- ══ SEGURIDAD — Content Security Policy ══
          Ajusta los dominios si añades nuevas fuentes externas.
          ⚠️ Reemplaza TU-DOMINIO.com por tu dominio real antes de desplegar. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://formsubmit.co https://cdn.cafecito.app; media-src 'self'; manifest-src 'self'; worker-src 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://formsubmit.co; media-src 'self'; manifest-src 'self'; worker-src 'self'">
 
     <!-- ══ FAVICONS ══ -->
     <!-- SVG: navegadores modernos (Chrome 80+, Firefox 84+, Safari 16.4+) -->
@@ -64,9 +64,8 @@
     <!-- ══ RENDIMIENTO — preconectar CDNs críticas ══ -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="dns-prefetch" href="https://cdn.cafecito.app">
+    <link rel="preconnect" href="https://cdn.cafecito.app" crossorigin>
+    <!-- dns-prefetch solo para dominios sin preconnect explícito -->
 
     <!-- ══ DATOS ESTRUCTURADOS JSON-LD ══ -->
     <script type="application/ld+json">

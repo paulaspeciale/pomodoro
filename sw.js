@@ -154,12 +154,29 @@ self.addEventListener('notificationclick', event => {
     );
 });
 
+// ==================== TIMEOUT HELPER ====================
+// Envuelve fetch() con un AbortController para que red lenta (no offline)
+// no cuelgue indefinidamente. El timeout por defecto es 8 s para assets de
+// shell y navegación; los sonidos usan cacheFirst y no pasan por aquí.
+const FETCH_TIMEOUT_MS = 8000;
+
+function fetchWithTimeout(request, timeoutMs = FETCH_TIMEOUT_MS) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
+    // Si request es un objeto Request, clonar con la nueva señal.
+    // Si es string u otro tipo primitivo, usarlo directamente.
+    const req = (request instanceof Request)
+        ? new Request(request, { signal: ctrl.signal })
+        : request;
+    return fetch(req).finally(() => clearTimeout(tid));
+}
+
 // ==================== ESTRATEGIAS DE CACHE ====================
 
 async function networkFirst(request, cacheName, fallbackUrl) {
     const cache = await caches.open(cacheName);
     try {
-        const response = await fetch(request);
+        const response = await fetchWithTimeout(request);
         if (response.ok) cache.put(request, response.clone());
         return response;
     } catch (_) {
@@ -176,10 +193,10 @@ async function networkFirst(request, cacheName, fallbackUrl) {
             const base = self.location.href.replace(/\/[^/]*$/, '/');
             // Intentar todas las variantes de la URL de fallback que pueden
             // haber sido usadas como clave durante el precache.
+            // Nota: solo variantes absolutas — cache.match() ignora URLs relativas.
             const fallbackVariants = [
-                new URL(fallbackUrl, base).href,                      // absoluta: https://…/index.html
-                fallbackUrl,                                           // relativa: ./index.html
-                new URL(fallbackUrl, base).href.replace(/index\.html$/, ''), // sin filename
+                new URL(fallbackUrl, base).href,                               // absoluta: https://…/index.html
+                new URL(fallbackUrl, base).href.replace(/index\.html$/, ''),   // sin filename: https://…/
             ];
             for (const variant of fallbackVariants) {
                 const fallback = await cache.match(variant);
@@ -195,7 +212,8 @@ async function cacheFirst(request, cacheName) {
     const cached = await cache.match(request);
     if (cached) return cached;
     try {
-        const response = await fetch(request);
+        // Sonidos pueden ser archivos grandes; usar timeout más generoso (30 s)
+        const response = await fetchWithTimeout(request, 30000);
         if (response.ok) cache.put(request, response.clone());
         return response;
     } catch (_) {
@@ -206,7 +224,7 @@ async function cacheFirst(request, cacheName) {
 async function staleWhileRevalidate(request, cacheName) {
     const cache  = await caches.open(cacheName);
     const cached = await cache.match(request);
-    const fetchPromise = fetch(request)
+    const fetchPromise = fetchWithTimeout(request)
         .then(response => {
             if (response.ok) cache.put(request, response.clone());
             return response;
