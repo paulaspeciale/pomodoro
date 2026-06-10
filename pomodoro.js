@@ -334,26 +334,26 @@ function buildBgScene(bg, type) {
     }
 
     if (type === 'pink') {
-        for (let i = 0; i < 7; i++) {
-            const s = 40 + i * 22;
-            frag.appendChild(el('div', 'amb-wave',
-                `width:${s}px;height:${s}px;` +
-                `top:${10 + Math.random()*80}%;` +
-                `left:${10 + Math.random()*80}%;` +
-                `animation-duration:${2 + i*0.6}s;` +
-                `animation-delay:${i*0.5}s`
-            ));
+        // Espectrograma: número de barras adaptado a mobile/desktop
+        const isMobile = window.matchMedia('(max-width: 480px)').matches;
+        const barCount = isMobile ? 22 : 38;
+        const wrap = el('div', 'amb-pink-bars');
+        for (let i = 0; i < barCount; i++) {
+            // Perfil de alturas tipo "campana" — barras centrales más altas
+            const center = (barCount - 1) / 2;
+            const dist   = Math.abs(i - center) / center;
+            const baseH  = Math.round((1 - dist * 0.55) * 80 + 15);
+            const dur    = (0.35 + Math.random() * 0.55).toFixed(2);
+            const delay  = (Math.random() * 0.6).toFixed(2);
+            const b = el('div', 'amb-pink-bar',
+                `height:${baseH}px;` +
+                `animation-duration:${dur}s;` +
+                `animation-delay:-${delay}s`
+            );
+            wrap.appendChild(b);
         }
-        for (let i = 0; i < 28; i++) {
-            const sz = 2 + Math.random()*5;
-            frag.appendChild(el('div', 'amb-dot',
-                `width:${sz}px;height:${sz}px;` +
-                `top:${Math.random()*100}%;` +
-                `left:${Math.random()*100}%;` +
-                `animation-duration:${3 + Math.random()*4}s;` +
-                `animation-delay:${Math.random()*3}s`
-            ));
-        }
+        frag.appendChild(wrap);
+        frag.appendChild(el('div', 'amb-pink-glow'));
     }
 
     if (type === 'white') {
@@ -429,49 +429,76 @@ function buildBgScene(bg, type) {
     }
 
     if (type === 'ocean') {
-        for (let i = 0; i < 4; i++) {
-            frag.appendChild(el('div', 'amb-light-ray',
-                `left:${10 + i*22}%;` +
-                `animation-duration:${4 + Math.random()*3}s;` +
-                `animation-delay:${i*1.2}s`
-            ));
-        }
-        for (let row = 0; row < 6; row++) {
-            frag.appendChild(el('div', 'amb-ocean-wave',
-                `top:${5 + row * 14}%;` +
-                `height:${60 + row * 18}px;` +
-                `animation-duration:${6 + row * 1.5 + Math.random()*2}s;` +
-                `animation-delay:${row * 0.8}s`
-            ));
-        }
-        for (let i = 0; i < 20; i++) {
-            const sz = 4 + Math.random() * 12;
-            frag.appendChild(el('div', 'amb-bubble',
+        // Halo y luna
+        frag.appendChild(el('div', 'amb-moon-halo'));
+        frag.appendChild(el('div', 'amb-moon'));
+
+        // Estrellas — posiciones fijas para evitar parpadeo en cada render
+        const starData = [
+            [8,8,1.2,2.8],[15,5,0.8,3.5],[22,12,1.5,2.1],[35,6,1.0,4.0],
+            [48,9,0.7,3.2],[55,4,1.3,2.5],[65,11,0.9,3.8],[72,7,1.1,2.0],
+            [80,5,0.6,4.2],[90,13,1.4,1.8],[95,8,0.8,3.0],[10,20,1.0,2.6],
+            [25,18,1.2,3.4],[42,22,0.7,4.5],[58,16,1.5,2.3],[75,20,0.9,3.7]
+        ];
+        starData.forEach(([x, y, sz, dur]) => {
+            frag.appendChild(el('div', 'amb-star',
                 `width:${sz}px;height:${sz}px;` +
-                `bottom:${Math.random()*20}%;` +
-                `left:${Math.random()*95}%;` +
-                `animation-duration:${5 + Math.random()*8}s;` +
-                `animation-delay:${Math.random()*6}s`
+                `left:${x}%;top:${y}%;` +
+                `animation-duration:${dur}s;` +
+                `animation-delay:${-(Math.random() * dur)}s`
+            ));
+        });
+
+        // Línea de horizonte al 45% de altura
+        frag.appendChild(el('div', 'amb-horizon', 'top:45%'));
+
+        // Olas de costa — debajo del horizonte
+        for (let i = 0; i < 5; i++) {
+            const yPct  = 50 + i * 10;
+            const h     = 18 + i * 8;
+            const alpha = 0.10 + i * 0.06;
+            frag.appendChild(el('div', 'amb-shore-wave',
+                `top:${yPct}%;` +
+                `height:${h}px;` +
+                `background:rgba(10,30,60,${alpha.toFixed(2)});` +
+                `animation-duration:${7 + i * 1.5}s;` +
+                `animation-delay:${-(i * 1.8)}s`
             ));
         }
-        for (let i = 0; i < 30; i++) {
-            frag.appendChild(el('div', 'amb-plankton',
-                `bottom:${5 + Math.random()*70}%;` +
-                `left:${Math.random()*100}%;` +
-                `animation-duration:${3 + Math.random()*5}s;` +
-                `animation-delay:${Math.random()*5}s`
+
+        // Reflejos de luna — columna de destellos sobre el agua
+        for (let i = 0; i < 9; i++) {
+            const xBase  = 82;           // posición horizontal (%) alineada con la luna
+            const xOff   = (i - 4) * 4.5;
+            const yStart = 47 + Math.abs(xOff) * 0.5;
+            const h      = 34 - Math.abs(xOff) * 2.4;
+            if (h < 4) continue;
+            frag.appendChild(el('div', 'amb-moon-refl',
+                `left:${xBase + xOff}%;` +
+                `top:${yStart}%;` +
+                `height:${h}px;` +
+                `animation-duration:${1.4 + Math.random() * 1.2}s;` +
+                `animation-delay:${-(Math.random() * 2)}s`
             ));
         }
-        for (let i = 0; i < 8; i++) {
-            const sz = 30 + Math.random() * 60;
-            frag.appendChild(el('div', 'amb-biolum',
-                `width:${sz}px;height:${sz}px;` +
-                `top:${20 + Math.random()*70}%;` +
-                `left:${Math.random()*90}%;` +
-                `animation-duration:${2 + Math.random()*3}s;` +
-                `animation-delay:${Math.random()*4}s`
-            ));
-        }
+
+        // Silueta de costa con SVG inline — rocas y colinas en la base
+        const coastSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        coastSvg.setAttribute('viewBox', '0 0 1000 40');
+        coastSvg.setAttribute('preserveAspectRatio', 'none');
+        coastSvg.className = 'amb-coast-svg';
+        const coastPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        coastPath.setAttribute('d',
+            'M0,40 L0,28 Q40,18 80,24 Q130,30 170,16 ' +
+            'Q210,4  250,10 Q290,16 340,8  ' +
+            'Q390,2  430,12 Q470,20 520,14 ' +
+            'Q570,8  620,18 Q670,26 720,20 ' +
+            'Q770,14 820,22 Q870,28 920,18 ' +
+            'Q960,10 1000,16 L1000,40 Z'
+        );
+        coastPath.setAttribute('fill', '#050d1a');
+        coastSvg.appendChild(coastPath);
+        frag.appendChild(coastSvg);
     }
 
     bg.appendChild(frag);
@@ -981,7 +1008,7 @@ async function requestNotificationPermissionOnUserGesture() {
 
 function showNotification(title, body) {
     if (notificationsEnabled) {
-        new Notification(title, { body, icon: './icons/icon-pomodoro.svg', tag: 'pomodoro' });
+        new Notification(title, { body, icon: './img/icons/icon-pomodoro.svg', tag: 'pomodoro' });
     }
 }
 

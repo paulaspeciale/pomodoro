@@ -22,25 +22,25 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icons/apple-touch-icon.png",
+      "src": "./img/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/apple-touch-icon.png",
+      "src": "./img/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "./icons/icon-pomodoro.svg",
+      "src": "./img/icons/icon-pomodoro.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "./icons/favicon.svg",
+      "src": "./img/icons/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -54,7 +54,7 @@
       "url": "./index.html?preset=classic&source=shortcut",
       "icons": [
         {
-          "src": "./icons/icon-pomodoro.svg",
+          "src": "./img/icons/icon-pomodoro.svg",
           "sizes": "any"
         }
       ]
@@ -66,7 +66,7 @@
       "url": "./index.html?preset=50-10&source=shortcut",
       "icons": [
         {
-          "src": "./icons/icon-pomodoro.svg",
+          "src": "./img/icons/icon-pomodoro.svg",
           "sizes": "any"
         }
       ]
@@ -78,7 +78,7 @@
       "url": "./index.html?preset=deepwork&source=shortcut",
       "icons": [
         {
-          "src": "./icons/icon-pomodoro.svg",
+          "src": "./img/icons/icon-pomodoro.svg",
           "sizes": "any"
         }
       ]

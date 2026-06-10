@@ -10,20 +10,16 @@
     <meta name="keywords" content="pomodoro timer, temporizador pomodoro, técnica pomodoro, pomodoro online, timer trabajo, focus timer, deep work, productividad, concentración, 25 5 pomodoro, 50 10 pomodoro">
     <meta name="author" content="Pomodoro Timer">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <!-- ══ ⚠️  ANTES DE DESPLEGAR: sustituye TU-DOMINIO.com
-         por tu dominio real en todas las etiquetas que siguen (canonical, og:url,
-         og:image, twitter:image, JSON-LD url/screenshot) y también en
-         robots.txt (Sitemap:) y sitemap.xml (<loc>, <xhtml:link>).
-         Búsqueda rápida: grep -r "TU-DOMINIO" .  ══ -->
-    <link rel="canonical" href="https://TU-DOMINIO.com/">
+  
+    <link rel="canonical" href="https://paulaspeciale.github.io/pomodoro/">
 
     <!-- ══ OPEN GRAPH (Facebook, WhatsApp, LinkedIn) ══ -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Pomodoro Timer">
     <meta property="og:title" content="Pomodoro Timer Online — Gratis, sin anuncios, funciona offline">
     <meta property="og:description" content="Temporizador Pomodoro configurable con sonidos ambientales, modo oscuro y presets (Clásico, 50/10, Deep Work). Instálalo como app sin registro.">
-    <meta property="og:url" content="https://TU-DOMINIO.com/">
-    <meta property="og:image" content="https://TU-DOMINIO.com/icons/og-image.png">
+    <meta property="og:url" content="https://paulaspeciale.github.io/pomodoro/">
+    <meta property="og:image" content="https://paulaspeciale.github.io/pomodoro/img/icons/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Pomodoro Timer — Interfaz con temporizador 50:00 y sonidos ambientales">
@@ -35,7 +31,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Pomodoro Timer Online — Gratis, sin anuncios, offline">
     <meta name="twitter:description" content="Temporizador Pomodoro con sonidos ambientales, modo oscuro y presets. Funciona sin conexión como PWA. Sin registro, sin anuncios.">
-    <meta name="twitter:image" content="https://TU-DOMINIO.com/icons/og-image.png">
+    <meta name="twitter:image" content="https://paulaspeciale.github.io/pomodoro/img/icons/og-image.png">
     <meta name="twitter:image:alt" content="Pomodoro Timer online, gratis y sin anuncios">
 
     <!-- ══ PWA ══ -->
@@ -48,24 +44,25 @@
     <!-- ⚠️ apple-touch-icon.png debe existir en ./icons/ (PNG 180×180 px).
          Sin este archivo la instalación PWA en iOS falla y el precache del SW
          lanzará un error. Genera el PNG desde icon-pomodoro.svg antes de desplegar. -->
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="./img/icons/apple-touch-icon.png">
 
     <!-- ══ SEGURIDAD — Content Security Policy ══
          Ajusta los dominios si añades nuevas fuentes externas.
          ⚠️ Reemplaza TU-DOMINIO.com por tu dominio real antes de desplegar. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://formsubmit.co; media-src 'self'; manifest-src 'self'; worker-src 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://formsubmit.co https://cdn.cafecito.app; media-src 'self'; manifest-src 'self'; worker-src 'self'">
 
     <!-- ══ FAVICONS ══ -->
     <!-- SVG: navegadores modernos (Chrome 80+, Firefox 84+, Safari 16.4+) -->
-    <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="./img/icons/favicon.svg">
     <!-- PNG: fallback para navegadores sin soporte SVG (Edge legacy, Safari < 16) -->
-    <link rel="icon" type="image/png" sizes="180x180" href="./icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="./img/icons/apple-touch-icon.png">
 
     <!-- ══ RENDIMIENTO — preconectar CDNs críticas ══ -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://cdn.cafecito.app" crossorigin>
-    <!-- dns-prefetch solo para dominios sin preconnect explícito -->
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.cafecito.app">
 
     <!-- ══ DATOS ESTRUCTURADOS JSON-LD ══ -->
     <script type="application/ld+json">
@@ -74,7 +71,7 @@
         "@type": "WebApplication",
         "name": "Pomodoro Timer",
         "alternateName": ["Temporizador Pomodoro", "Timer Pomodoro Online"],
-        "url": "https://TU-DOMINIO.com/",
+        "url": "https://paulaspeciale.github.io/pomodoro/",
         "description": "Temporizador Pomodoro gratuito y sin anuncios con ciclos configurables, sonidos ambientales (lluvia, bosque, océano), modo oscuro y soporte offline como PWA.",
         "applicationCategory": "ProductivityApplication",
         "operatingSystem": "All",
@@ -92,7 +89,7 @@
             "Funciona sin conexión (PWA instalable)",
             "Sin registro ni anuncios"
         ],
-        "screenshot": "https://TU-DOMINIO.com/icons/og-image.png",
+        "screenshot": "https://paulaspeciale.github.io/pomodoro/img/icons/og-image.png",
         "inLanguage": ["es"]
     }
     </script>

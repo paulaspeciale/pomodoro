@@ -1,5 +1,348 @@
+/* ==================== POMODORO TIMER - CSS COMPLETO ==================== */
 
-/* ==================== MODAL DONACIONES ==================== */
+/*
+ * PALETA: inspirada en café parisino vintage (@anah.joyy)
+ * Primaria:   #A13C38  (rojo oscuro / vino)
+ * Crema:      #ECD2A6  (beige cálido)
+ * Verde:      #465123  (oliva oscuro)
+ * Dorado:     #DD9A54  (ámbar / ocre)
+ * Marrón:     #915A36  (marrón terroso)
+ *
+ * TEMA CLARO  → fondo crema, superficies pergamino, texto marrón oscuro
+ * TEMA OSCURO → fondo marrón muy oscuro, superficies oscuras cálidas, texto crema
+ */
+
+/* ── TEMA CLARO (defecto) ─────────────────────────────────────── */
+:root {
+    --bg:            #f5ede0;          /* fondo crema suave */
+    --surface:       #ede0cc;          /* superficies pergamino */
+    --card:          #e8d9c0;          /* tarjetas beige cálido */
+    --text-primary:  #2e1a0e;          /* texto marrón muy oscuro */
+    --text-secondary:#7a5c3a;          /* texto marrón medio */
+    --accent-work:   #A13C38;          /* rojo vino — trabajo */
+    --accent-break:  #465123;          /* oliva — descanso */
+    --border:        #c9b08a;          /* borde dorado tenue */
+    --progress-bg:   #d8c9ad;          /* pista de progreso */
+    --shadow:        rgba(90,50,20,0.12);
+    /* alias usados en donaciones */
+    --card-bg:       #e8d9c0;
+    --border-color:  #c9b08a;
+}
+
+/* ── TEMA OSCURO (class body.dark ó prefers-color-scheme: dark) ── */
+@media (prefers-color-scheme: dark) {
+    :root:not(.light-forced) {
+        --bg:            #1a0f08;
+        --surface:       #261608;
+        --card:          #30200f;
+        --text-primary:  #ECD2A6;
+        --text-secondary:#b08d60;
+        --accent-work:   #c9514e;
+        --accent-break:  #6b7d38;
+        --border:        #4a3018;
+        --progress-bg:   #3a2410;
+        --shadow:        rgba(0,0,0,0.45);
+        --card-bg:       #30200f;
+        --border-color:  #4a3018;
+    }
+}
+
+body.dark {
+    --bg:            #1a0f08;
+    --surface:       #261608;
+    --card:          #30200f;
+    --text-primary:  #ECD2A6;
+    --text-secondary:#b08d60;
+    --accent-work:   #c9514e;
+    --accent-break:  #6b7d38;
+    --border:        #4a3018;
+    --progress-bg:   #3a2410;
+    --shadow:        rgba(0,0,0,0.45);
+    --card-bg:       #30200f;
+    --border-color:  #4a3018;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 16px 12px;
+}
+
+main { 
+    max-width: 540px; 
+    margin: 0 auto; 
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.config-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+}
+
+/* ==================== CONFIGURACIÓN ==================== */
+.config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.config-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+}
+
+.config-card-label {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.time-input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.time-btn {
+    width: 54px;
+    height: 54px;
+    border: none;
+    background: var(--surface);
+    color: var(--text-primary);
+    border-radius: 50%;
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.time-btn:hover { 
+    background: var(--border); 
+    transform: scale(1.05);
+}
+
+.time-input-wrap {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.time-input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 2.5rem;
+    font-weight: 700;
+    width: 110px;
+    text-align: center;
+}
+
+.time-unit {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-left: 6px;
+}
+
+/* Ciclos */
+.config-cycles {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.cycles-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+/* Presets */
+.presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.preset-btn {
+    padding: 10px 20px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.preset-btn:hover {
+    border-color: var(--accent-work);
+    transform: translateY(-1px);
+}
+
+/* Botón Comenzar */
+.start-btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--accent-work);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    margin-top: 12px;
+    box-shadow: 0 8px 25px var(--shadow);
+    transition: all 0.2s;
+}
+
+.start-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px var(--shadow);
+}
+
+/* ==================== COUNTDOWN ==================== */
+.countdown {
+    background: var(--card);
+    border-radius: 32px;
+    padding: 40px 24px 34px;
+    text-align: center;
+    box-shadow: 0 20px 50px var(--shadow);
+    margin-top: 24px;
+}
+
+.estado {
+    display: inline-block;
+    padding: 8px 32px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.mode-work { background: var(--accent-work); }
+.mode-break { background: var(--accent-break); }
+
+#countdown-text, #descanso-time {
+    font-size: 6rem;
+    font-weight: 700;
+    letter-spacing: -5px;
+    line-height: 1;
+    margin: 16px 0;
+}
+
+.progress-container {
+    height: 14px;
+    background: var(--progress-bg);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 32px 0;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-work), #DD9A54);
+    width: 100%;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.controls {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.control-btn {
+    flex: 1;
+    max-width: 170px;
+    padding: 16px 24px;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+#pause-btn { 
+    background: var(--surface); 
+    color: var(--text-primary); 
+    border: 2px solid var(--border);
+}
+
+#reset-btn { 
+    background: transparent; 
+    border: 2px solid var(--border); 
+    color: var(--text-secondary); 
+}
+
+/* Ambient */
+.ambient-controls {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+/* Hidden */
+.hidden { 
+    display: none !important; 
+}
+
+/* Toast */
+#pomo-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    color: var(--text-primary);
+    padding: 14px 28px;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px var(--shadow);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.4s ease;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    #countdown-text, #descanso-time { 
+        font-size: 4.8rem; 
+    }
+}
+
+/* ==================== DONACIONES (tus estilos originales) ==================== */
 .donation-options {
     display: flex;
     flex-direction: column;
@@ -117,4 +460,247 @@
     font-size: 0.9rem;
     transition: filter 0.2s ease, transform 0.2s ease;
 }
-.donation-yt-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.donation-yt-btn:hover { 
+    filter: brightness(1.1); 
+    transform: translateY(-2px); 
+}
+/* ==================== FONDO AMBIENTAL ==================== */
+#ambient-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+#ambient-bg.active { opacity: 1; }
+
+/* Lluvia */
+.amb-raindrop {
+    position: absolute;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, rgba(120,180,255,0.55));
+    border-radius: 2px;
+    animation: ambRainFall linear infinite;
+}
+@keyframes ambRainFall {
+    0%   { transform: translateY(-100px); }
+    100% { transform: translateY(110vh); }
+}
+.amb-puddle {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 6px;
+    background: rgba(80,140,220,0.12);
+}
+.amb-ripple {
+    position: absolute;
+    width: 24px; height: 10px;
+    border: 1.5px solid rgba(120,180,255,0.35);
+    border-radius: 50%;
+    animation: ambRippleExpand ease-out infinite;
+}
+@keyframes ambRippleExpand {
+    0%   { transform: scale(0.5); opacity: 0.6; }
+    100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* Ruido Rosa — espectrograma */
+.amb-pink-bars {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 55%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    padding: 0 12px;
+}
+.amb-pink-bar {
+    flex: 1;
+    max-width: 9px;
+    border-radius: 2px 2px 0 0;
+    transform-origin: bottom;
+    background: linear-gradient(
+        to top,
+        rgba(220, 80, 150, 0.85) 0%,
+        rgba(255, 150, 200, 0.55) 60%,
+        rgba(255, 200, 230, 0.25) 100%
+    );
+    animation: ambPinkBarBounce ease-in-out infinite alternate;
+}
+@keyframes ambPinkBarBounce {
+    0%   { transform: scaleY(0.15); opacity: 0.5; }
+    100% { transform: scaleY(1);    opacity: 0.95; }
+}
+.amb-pink-glow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 35%;
+    background: radial-gradient(
+        ellipse 80% 60% at 50% 100%,
+        rgba(200, 60, 120, 0.18) 0%,
+        transparent 70%
+    );
+    pointer-events: none;
+}
+
+/* Ruido Blanco */
+.amb-pixel {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: rgba(220,220,220,0.5);
+    animation: ambPixelFlicker step-end infinite;
+}
+@keyframes ambPixelFlicker {
+    0%, 100% { opacity: 0.1; }
+    50%       { opacity: 0.8; }
+}
+.amb-oscilloscope {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%, rgba(200,200,200,0.3) 20%,
+        rgba(200,200,200,0.6) 50%, rgba(200,200,200,0.3) 80%, transparent 100%);
+    animation: ambOscMove ease-in-out infinite alternate;
+}
+@keyframes ambOscMove {
+    0%   { transform: scaleY(1); opacity: 0.4; }
+    100% { transform: scaleY(6); opacity: 0.15; }
+}
+.amb-freq-bar {
+    position: absolute;
+    bottom: 0;
+    width: 3px;
+    background: rgba(200,200,200,0.3);
+    border-radius: 2px 2px 0 0;
+    transform-origin: bottom;
+    animation: ambFreqBounce ease-in-out infinite alternate;
+}
+@keyframes ambFreqBounce {
+    0%   { transform: scaleY(0.2); }
+    100% { transform: scaleY(1); }
+}
+.amb-glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,200,220,0.1) 0%, transparent 70%);
+    animation: ambOrbDrift ease-in-out infinite alternate;
+}
+@keyframes ambOrbDrift {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, -20px) scale(1.1); }
+}
+
+/* Bosque */
+.amb-glow {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100,200,100,0.12) 0%, transparent 70%);
+    animation: ambGlowPulse ease-in-out infinite alternate;
+}
+@keyframes ambGlowPulse {
+    0%   { opacity: 0.4; transform: scale(1); }
+    100% { opacity: 0.9; transform: scale(1.15); }
+}
+.amb-leaf {
+    position: absolute;
+    width: 10px; height: 14px;
+    background: rgba(80,180,80,0.5);
+    border-radius: 0 60% 0 60%;
+    animation: ambLeafFall linear infinite;
+}
+@keyframes ambLeafFall {
+    0%   { transform: translateY(-20px) rotate(0deg);    opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.8; }
+    100% { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+}
+.amb-firefly {
+    position: absolute;
+    width: 5px; height: 5px;
+    background: rgba(255,255,120,0.85);
+    border-radius: 50%;
+    box-shadow: 0 0 8px 3px rgba(255,255,100,0.5);
+    animation: ambFireflyBlink ease-in-out infinite alternate;
+}
+@keyframes ambFireflyBlink {
+    0%   { opacity: 0.1; transform: translate(0, 0); }
+    100% { opacity: 1;   transform: translate(12px, -10px); }
+}
+
+/* Océano — anochecer costero */
+#ambient-bg.ocean {
+    background: linear-gradient(180deg, #0d1b33 0%, #1a2d50 40%, #0a1525 100%);
+}
+.amb-moon {
+    position: absolute;
+    top: 14px; right: 12%;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #e8d98a;
+    animation: ambMoonGlow ease-in-out 4s infinite alternate;
+}
+@keyframes ambMoonGlow {
+    0%   { opacity: 0.75; }
+    100% { opacity: 1; }
+}
+.amb-moon-halo {
+    position: absolute;
+    top: 8px; right: calc(12% - 4px);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(232,217,138,0.2);
+    animation: ambMoonGlow ease-in-out 4s infinite alternate;
+}
+.amb-star {
+    position: absolute;
+    border-radius: 50%;
+    background: white;
+    animation: ambStarTwinkle ease-in-out infinite alternate;
+}
+@keyframes ambStarTwinkle {
+    0%   { opacity: 0.15; }
+    100% { opacity: 0.85; }
+}
+.amb-horizon {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: rgba(100,160,220,0.2);
+}
+.amb-shore-wave {
+    position: absolute;
+    left: -5%; right: -5%;
+    border-radius: 40%;
+    border-top: 1px solid rgba(200,230,255,0.2);
+    background: transparent;
+    animation: ambShoreRoll ease-in-out infinite;
+}
+@keyframes ambShoreRoll {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    50%       { transform: translateX(3%) rotate(0.8deg); }
+}
+.amb-moon-refl {
+    position: absolute;
+    width: 5px;
+    background: linear-gradient(180deg, rgba(232,217,138,0.5), transparent);
+    border-radius: 3px;
+    animation: ambReflShimmer ease-in-out infinite alternate;
+}
+@keyframes ambReflShimmer {
+    0%   { opacity: 0.25; transform: scaleX(0.7); }
+    100% { opacity: 0.85; transform: scaleX(1.5); }
+}
+.amb-coast-svg {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 40px;
+    pointer-events: none;
+}

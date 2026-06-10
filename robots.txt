@@ -2,7 +2,6 @@ User-agent: *
 Allow: /
 
 # Archivos de audio (no es necesario indexarlos)
-Disallow: /sounds/
+Disallow: /img/sounds/
 
-# ⚠️  ANTES DE DESPLEGAR: reemplaza TU-DOMINIO.com por tu dominio real
-Sitemap: https://TU-DOMINIO.com/sitemap.xml
+Sitemap: https://paulaspeciale.github.io/pomodoro/sitemap.xml
