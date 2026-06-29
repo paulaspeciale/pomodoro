@@ -142,98 +142,111 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js" defer></script>
 </head>
 <body>
-    <main>
+    <a href="#main-content" class="skip-link" data-i18n="skipLink">Ir al contenido principal</a>
+    <main id="main-content">
        
         <!-- Botones superiores -->
-        <div class="top-buttons">
+        <div class="top-buttons" role="group" aria-label="Controles de aplicación">
+            <!-- Selector de idioma -->
+            <div class="lang-selector" role="group" aria-label="Idioma">
+                <button class="lang-btn" data-lang-btn="es" aria-pressed="true"  lang="es">ES</button>
+                <button class="lang-btn" data-lang-btn="en" aria-pressed="false" lang="en">EN</button>
+                <button class="lang-btn" data-lang-btn="pt" aria-pressed="false" lang="pt">PT</button>
+            </div>
             <button id="install-btn" class="theme-toggle install-btn hidden" aria-label="Instalar aplicación" title="Instalar en escritorio">
-                <i class="fas fa-download"></i>
+                <i class="fas fa-download" aria-hidden="true"></i>
             </button>
             <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema">
-                <i class="fas fa-moon"></i>
+                <i class="fas fa-moon" aria-hidden="true"></i>
             </button>
         </div>
 
         <div id="ciclos-container">
-            <h1>Pomodoro Timer</h1>
-            <p class="config-subtitle">Configura tu sesión de trabajo</p>
+            <h1 data-i18n="appTitle">Pomodoro Timer</h1>
+            <p class="config-subtitle" data-i18n="configSubtitle">Configura tu sesión de trabajo</p>
 
-            <div class="config-grid">
-                <!-- Trabajo -->
-                <div class="config-card work-card">
-                    <div class="config-card-label">
-                        <i class="fas fa-brain"></i> Trabajo
+            <!-- Fila única con los 3 campos -->
+            <div class="config-row">
+
+                <div class="config-chip" role="group" aria-labelledby="work-card-label">
+                    <div class="chip-label" id="work-card-label">
+                        <i class="fas fa-brain" aria-hidden="true"></i>
+                        <span data-i18n="labelWork">Trabajo</span>
                     </div>
-                    <div class="time-input-group">
-                        <button class="time-btn minus" data-target="work-minutes" aria-label="Reducir minutos de trabajo">
-                            <i class="fas fa-minus"></i>
+                    <div class="chip-ctrl">
+                        <button class="time-btn minus" data-target="work-minutes" data-i18n-aria="ariaDecreaseWork" aria-label="Reducir minutos de trabajo">
+                            <i class="fas fa-minus" aria-hidden="true"></i>
                         </button>
-                        <div class="time-input-wrap">
-                            <input type="number" id="work-minutes" class="time-input" value="50" min="1" max="180" step="1" aria-label="Minutos de trabajo">
-                            <span class="time-unit">min</span>
+                        <div class="chip-val-wrap">
+                            <input type="number" id="work-minutes" class="time-input" value="50" min="1" max="180" step="1" data-i18n-aria="ariaWorkMinutes" aria-label="Minutos de trabajo">
+                            <span class="time-unit" data-i18n="unitMin">min</span>
                         </div>
-                        <button class="time-btn plus" data-target="work-minutes" aria-label="Aumentar minutos de trabajo">
-                            <i class="fas fa-plus"></i>
+                        <button class="time-btn plus" data-target="work-minutes" data-i18n-aria="ariaIncreaseWork" aria-label="Aumentar minutos de trabajo">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Descanso -->
-                <div class="config-card break-card">
-                    <div class="config-card-label">
-                        <i class="fas fa-mug-hot"></i> Descanso
+                <div class="config-chip" role="group" aria-labelledby="break-card-label">
+                    <div class="chip-label" id="break-card-label">
+                        <i class="fas fa-mug-hot" aria-hidden="true"></i>
+                        <span data-i18n="labelBreak">Descanso</span>
                     </div>
-                    <div class="time-input-group">
-                        <button class="time-btn minus" data-target="break-minutes" aria-label="Reducir minutos de descanso">
-                            <i class="fas fa-minus"></i>
+                    <div class="chip-ctrl">
+                        <button class="time-btn minus" data-target="break-minutes" data-i18n-aria="ariaDecreaseBreak" aria-label="Reducir minutos de descanso">
+                            <i class="fas fa-minus" aria-hidden="true"></i>
                         </button>
-                        <div class="time-input-wrap">
-                            <input type="number" id="break-minutes" class="time-input" value="10" min="1" max="60" step="1" aria-label="Minutos de descanso">
-                            <span class="time-unit">min</span>
+                        <div class="chip-val-wrap">
+                            <input type="number" id="break-minutes" class="time-input" value="10" min="1" max="60" step="1" data-i18n-aria="ariaBreakMinutes" aria-label="Minutos de descanso">
+                            <span class="time-unit" data-i18n="unitMin">min</span>
                         </div>
-                        <button class="time-btn plus" data-target="break-minutes" aria-label="Aumentar minutos de descanso">
-                            <i class="fas fa-plus"></i>
+                        <button class="time-btn plus" data-target="break-minutes" data-i18n-aria="ariaIncreaseBreak" aria-label="Aumentar minutos de descanso">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
+
+                <div class="config-chip" role="group" aria-label="Número de ciclos">
+                    <div class="chip-label">
+                        <i class="fas fa-repeat" aria-hidden="true"></i>
+                        <label for="ciclos-input" data-i18n="labelCycles">Ciclos</label>
+                    </div>
+                    <div class="chip-ctrl">
+                        <button class="time-btn minus" data-target="ciclos-input" data-i18n-aria="ariaDecreaseCycles" aria-label="Reducir número de ciclos">
+                            <i class="fas fa-minus" aria-hidden="true"></i>
+                        </button>
+                        <div class="chip-val-wrap">
+                            <input type="number" id="ciclos-input" class="time-input" value="4" min="1" max="20" step="1" data-i18n-aria="ariaCycles" aria-label="Número de ciclos" aria-describedby="config-summary">
+                            <span class="time-unit" id="cycles-unit-label">ciclos</span>
+                        </div>
+                        <button class="time-btn plus" data-target="ciclos-input" data-i18n-aria="ariaIncreaseCycles" aria-label="Aumentar número de ciclos">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Ciclos -->
-            <div class="config-cycles">
-                <label for="ciclos-input" class="cycles-label">
-                    <i class="fas fa-repeat"></i> Número de ciclos
-                </label>
-                <div class="time-input-group cycles-group">
-                    <button class="time-btn minus" data-target="ciclos-input" aria-label="Reducir número de ciclos">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <div class="time-input-wrap">
-                        <input type="number" id="ciclos-input" class="time-input" value="4" min="1" max="20" step="1" aria-label="Número de ciclos">
-                        <span class="time-unit" id="cycles-unit-label">ciclos</span>
-                    </div>
-                    <button class="time-btn plus" data-target="ciclos-input" aria-label="Aumentar número de ciclos">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <p class="config-summary" id="config-summary">Total estimado: <strong>3h 50 min</strong></p>
-            </div>
+            <p class="config-summary" id="config-summary">Total estimado: <strong>3h 50 min</strong></p>
 
             <!-- Presets -->
             <div class="presets-row">
-                <span class="presets-label">Presets:</span>
-                <button class="preset-btn" data-work="25" data-break="5" data-cycles="4">Clásico</button>
-                <button class="preset-btn" data-work="50" data-break="10" data-cycles="4">50/10</button>
-                <button class="preset-btn" data-work="90" data-break="20" data-cycles="3">Deep Work 90/20</button>
+                <span class="presets-label" data-i18n="presetsLabel">Presets:</span>
+                <button class="preset-btn" data-work="25" data-break="5"  data-cycles="4" data-i18n="presetClassic" aria-pressed="false">Clásico</button>
+                <button class="preset-btn" data-work="50" data-break="10" data-cycles="4" data-i18n="preset5010" aria-pressed="false">50/10</button>
+                <button class="preset-btn" data-work="90" data-break="20" data-cycles="3" data-i18n="presetDeepWork" aria-pressed="false">Deep Work 90/20</button>
             </div>
 
             <button id="start-btn" class="start-btn">
-                <i class="fas fa-play"></i> Comenzar
+                <i class="fas fa-play" aria-hidden="true"></i>
+                <span data-i18n="btnStart">Comenzar</span>
             </button>
         </div>
 
         <!-- Sonido Ambiental - siempre visible -->
-<div id="ambient-panel" class="ambient-controls">
-    <select id="ambient-select" class="ambient-select" aria-label="Sonido ambiental">
+<div id="ambient-panel" class="ambient-controls" role="group" aria-labelledby="ambient-panel-label">
+    <span id="ambient-panel-label" class="sr-only">Sonido ambiental</span>
+    <select id="ambient-select" class="ambient-select" data-i18n-aria="ambientLabel" aria-label="Sonido ambiental">
         <option value="none">🎵 Sin ambiental</option>
         <option value="rain">🌧️ Lluvia</option>
         <option value="pink">🌸 Ruido Rosa</option>
@@ -244,62 +257,62 @@
     
     <div class="volume-container">
         <button id="ambient-toggle" class="ambient-btn" aria-label="Activar/Desactivar sonido">
-            <i class="fas fa-volume-mute"></i>
+            <i class="fas fa-volume-mute" aria-hidden="true"></i>
         </button>
-        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45" aria-label="Volumen del sonido ambiental">
+        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45" data-i18n-aria="ambientVolumeLabel" aria-label="Volumen del sonido ambiental">
     </div>
 </div>
 
         <!-- Banner descarga offline -->
-        <div id="offline-sound-banner" class="offline-banner hidden">
-            <div style="width:100%">
-                <span><i class="fas fa-wifi-slash"></i> Guarda <strong id="offline-sound-name"></strong> para escuchar sin conexión</span>
+        <div id="offline-sound-banner" class="offline-banner hidden" role="status" aria-live="polite" aria-label="Disponibilidad offline del sonido actual">
+            <div class="offline-banner-text">
+                <span><i class="fas fa-wifi-slash" aria-hidden="true"></i> <span data-i18n="offlineSaveFor">Guarda</span> <strong id="offline-sound-name"></strong> <span data-i18n="offlineSaveForEnd">para escuchar sin conexión</span></span>
                 <div class="offline-progress-wrap" id="offline-progress-wrap">
                     <div class="offline-progress-bar" id="offline-progress-bar"></div>
                 </div>
             </div>
             <div class="offline-banner-btns">
-                <button id="offline-download-btn" class="offline-btn download">
-                    <i class="fas fa-download"></i> Guardar offline
+                <button id="offline-download-btn" class="offline-btn download" aria-label="Guardar sonido para uso offline">
+                    <i class="fas fa-download" aria-hidden="true"></i> Guardar offline
                 </button>
-                <button id="offline-dismiss-btn" class="offline-btn dismiss">
-                    <i class="fas fa-times"></i>
+                <button id="offline-dismiss-btn" class="offline-btn dismiss" aria-label="Cerrar aviso">
+                    <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
 
-        <div id="countdown" class="countdown">
+        <div id="countdown" class="countdown" role="region" aria-label="Temporizador activo">
             <!-- Badge de modo — visible tanto en trabajo como en descanso -->
-            <div class="estado mode-work">
+            <div class="estado mode-work" aria-live="off">
                 <span id="modo-actual">TRABAJO</span>
             </div>
 
             <!-- Trabajo -->
             <div id="trabajo-container">
-                <h1 id="countdown-text">50:00</h1>
+                <div id="countdown-text" role="timer" aria-live="off" aria-label="Tiempo de trabajo restante">50:00</div>
             </div>
 
             <!-- Descanso -->
             <div id="descanso-container" class="hidden">
-                <h1 id="descanso-time">10:00</h1>
+                <div id="descanso-time" role="timer" aria-live="off" aria-label="Tiempo de descanso restante">10:00</div>
                 <small id="descanso-label">10 minutos de descanso</small>
             </div>
 
             <div class="progress-container">
-                <div id="progress-bar" class="progress-bar"></div>
+                <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del ciclo actual"></div>
             </div>
 
             <div class="controls">
-                <button id="pause-btn" class="control-btn">
-                    <i class="fas fa-pause"></i>
-                    <span>Pausar</span>
+                <button id="pause-btn" class="control-btn" data-i18n-aria="ariaPause" aria-label="Pausar temporizador">
+                    <i class="fas fa-pause" aria-hidden="true"></i>
+                    <span data-i18n="btnPause">Pausar</span>
                 </button>
-                <button id="reset-btn" class="control-btn reset">
-                    <i class="fas fa-redo"></i> Reiniciar
+                <button id="reset-btn" class="control-btn reset" data-i18n-aria="ariaReset" aria-label="Reiniciar sesión">
+                    <i class="fas fa-redo" aria-hidden="true"></i> <span data-i18n="btnReset">Reiniciar</span>
                 </button>
             </div>
 
-            <div class="info-ciclo">
+            <div class="info-ciclo" aria-live="polite" aria-atomic="true">
                 Ciclo <span id="ciclo-actual">1</span> / <span id="ciclo-total">4</span>
             </div>
         </div>
@@ -320,12 +333,12 @@
     <!-- ==================== FOOTER NAV ==================== -->
     <footer class="footer-nav">
         <nav>
-            <button class="footer-btn" data-modal="modal-about-me">Sobre mí</button>
-            <button class="footer-btn" data-modal="modal-about-app">Sobre la app</button>
-            <button class="footer-btn" data-modal="modal-donations">Donaciones</button>
-            <button class="footer-btn" data-modal="modal-projects">Otros proyectos</button>
-            <button class="footer-btn" data-modal="modal-suggestions">Sugerencias / Comentarios</button>
-            <button class="footer-btn" data-modal="modal-offline-guide">Uso offline</button>
+            <button class="footer-btn" data-modal="modal-about-me" data-i18n="footerAboutMe">Sobre mí</button>
+            <button class="footer-btn" data-modal="modal-about-app" data-i18n="footerAboutApp">Sobre la app</button>
+            <button class="footer-btn" data-modal="modal-donations" data-i18n="footerDonations">Donaciones</button>
+            <button class="footer-btn" data-modal="modal-projects" data-i18n="footerProjects">Otros proyectos</button>
+            <button class="footer-btn" data-modal="modal-suggestions" data-i18n="footerSuggestions">Sugerencias / Comentarios</button>
+            <button class="footer-btn" data-modal="modal-offline-guide" data-i18n="footerOffline">Uso offline</button>
         </nav>
     </footer>
 
@@ -336,8 +349,8 @@
 
     <!-- Sobre mí -->
     <div id="modal-about-me" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-about-me-title">
-        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        <h2 id="modal-about-me-title">Sobre mí</h2>
+        <button class="modal-close" data-i18n-aria="ariaClose" aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+        <h2 id="modal-about-me-title" data-i18n="modalAboutMeTitle">Sobre mí</h2>
         <div class="modal-content">
             <p>👋 ¡Hola! Soy el creador de esta app. Construí este temporizador Pomodoro porque quería una herramienta simple, bonita y que funcionara sin conexión.</p>
             <br>
@@ -347,8 +360,8 @@
 
     <!-- Sobre la app -->
     <div id="modal-about-app" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-about-app-title">
-        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        <h2 id="modal-about-app-title">Sobre la app</h2>
+        <button class="modal-close" data-i18n-aria="ariaClose" aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+        <h2 id="modal-about-app-title" data-i18n="modalAboutAppTitle">Sobre la app</h2>
         <div class="modal-content">
             <p>🍅 <strong>Pomodoro Timer</strong> es una Progressive Web App (PWA) que puedes instalar en tu dispositivo y usar sin conexión.</p>
             <br>
@@ -365,8 +378,8 @@
 
     <!-- Donaciones -->
     <div id="modal-donations" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-donations-title">
-        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        <h2 id="modal-donations-title">Donaciones</h2>
+        <button class="modal-close" data-i18n-aria="ariaClose" aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+        <h2 id="modal-donations-title" data-i18n="modalDonationsTitle">Donaciones</h2>
         <div class="modal-content">
             <p>☕ Esta app es completamente gratuita y sin anuncios. Si te resulta útil y quieres apoyar el desarrollo, ¡cualquier aporte es muy bienvenido!</p>
 
@@ -392,7 +405,7 @@
                         <span class="donation-name">PayPal</span>
                     </div>
                     <div class="donation-placeholder">
-                        <i class="fas fa-image" style="font-size:1.6rem;opacity:0.35"></i>
+                        <i class="fas fa-image" style="font-size:1.6rem;opacity:0.35" aria-hidden="true"></i>
                         <span>Imagen de PayPal próximamente</span>
                     </div>
                 </div>
@@ -414,10 +427,10 @@
 
             <!-- YouTube -->
             <div class="donation-youtube">
-                <i class="fab fa-youtube" style="color:#ff0000;font-size:1.2rem"></i>
+                <i class="fab fa-youtube" style="color:#ff0000;font-size:1.2rem" aria-hidden="true"></i>
                 <p>También podés apoyarme suscribiéndote a mi canal de YouTube:</p>
                 <a href="https://www.youtube.com/@leerparasentir" rel="noopener" target="_blank" class="donation-yt-btn">
-                    <i class="fab fa-youtube"></i> @leerparasentir
+                    <i class="fab fa-youtube" aria-hidden="true"></i> @leerparasentir
                 </a>
             </div>
 
@@ -426,8 +439,8 @@
 
     <!-- Otros proyectos -->
     <div id="modal-projects" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-projects-title">
-        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        <h2 id="modal-projects-title">Otros proyectos</h2>
+        <button class="modal-close" data-i18n-aria="ariaClose" aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+        <h2 id="modal-projects-title" data-i18n="modalProjectsTitle">Otros proyectos</h2>
         <div class="modal-content">
             <p>🚀 Aquí encontrarás mis otros proyectos cuando estén listos.</p>
             <br>
@@ -437,52 +450,53 @@
 
     <!-- Sugerencias / Comentarios -->
     <div id="modal-suggestions" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-suggestions-title">
-        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        <h2 id="modal-suggestions-title">Sugerencias / Comentarios</h2>
+        <button class="modal-close" data-i18n-aria="ariaClose" aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+        <h2 id="modal-suggestions-title" data-i18n="modalSuggestionsTitle">Sugerencias / Comentarios</h2>
         <div class="modal-content">
             <div class="suggestion-form" id="suggestion-form">
                 <div class="form-group">
-                    <label for="suggestion-name">Tu nombre <span class="label-optional">(opcional)</span></label>
+                    <label for="suggestion-name"><span data-i18n="suggestionNameLabel">Tu nombre</span> <span class="label-optional" data-i18n="suggestionNameOptional">(opcional)</span></label>
                     <input type="text" id="suggestion-name" class="form-input" placeholder="Tu nombre" autocomplete="name" maxlength="100">
                 </div>
                 <div class="form-group">
-                    <label for="suggestion-email">Tu email <span class="label-optional">(opcional)</span></label>
+                    <label for="suggestion-email"><span data-i18n="suggestionEmailLabel">Tu email</span> <span class="label-optional" data-i18n="suggestionEmailOptional">(opcional)</span></label>
                     <input type="email" id="suggestion-email" class="form-input" placeholder="ejemplo@correo.com" autocomplete="email">
                 </div>
                 <div class="form-group">
-                    <label for="suggestion-text">Mensaje</label>
-                    <textarea id="suggestion-text" class="form-input form-textarea" placeholder="Cuéntame qué mejorarías o qué te gustaría ver..." maxlength="500"></textarea>
+                    <label for="suggestion-text" data-i18n="suggestionMsgLabel">Mensaje</label>
+                    <textarea id="suggestion-text" class="form-input form-textarea" data-i18n-ph="suggestionMsgPlaceholder" placeholder="Cuéntame qué mejorarías o qué te gustaría ver..." maxlength="500"></textarea>
                     <span class="char-count"><span id="char-current">0</span>/500</span>
                 </div>
                 <button id="suggestion-submit" class="suggestion-submit-btn" type="button">
-                    <i class="fas fa-paper-plane"></i> Enviar
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                    <span data-i18n="suggestionSubmit">Enviar</span>
                 </button>
             </div>
             <!-- Estado de éxito (oculto hasta envío) -->
             <div id="suggestion-success" class="hidden" style="text-align:center;padding:24px 0">
                 <div style="font-size:2.8rem;margin-bottom:12px">✅</div>
-                <p style="font-weight:700;color:var(--accent-break);font-size:1.05rem;margin-bottom:6px">¡Mensaje enviado!</p>
-                <p style="color:var(--text-secondary);font-size:0.9rem">Gracias por tu feedback. Lo leeré con atención.</p>
+                <p style="font-weight:700;color:var(--accent-break);font-size:1.05rem;margin-bottom:6px" data-i18n="suggestionSuccessTitle">¡Mensaje enviado!</p>
+                <p style="color:var(--text-secondary);font-size:0.9rem" data-i18n="suggestionSuccessDesc">Gracias por tu feedback. Lo leeré con atención.</p>
             </div>
         </div>
     </div>
 
     <!-- Tutorial offline -->
     <div id="modal-offline-guide" class="modal modal-offline-guide hidden" role="dialog" aria-modal="true" aria-labelledby="modal-offline-guide-title">
-        <button class="modal-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        <button class="modal-close" data-i18n-aria="ariaClose" aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
         <h2 id="modal-offline-guide-title"><i class="fas fa-wifi-slash" style="font-size:1.1rem;margin-right:8px" aria-hidden="true"></i>Uso offline</h2>
 
         <div class="modal-content">
 
             <!-- Selector de plataforma -->
             <div class="offline-platform-tabs" role="tablist" aria-label="Selecciona tu dispositivo">
-                <button class="ofl-tab active" role="tab" aria-selected="true"  data-tab="android"><i class="fab fa-android"></i> Android</button>
-                <button class="ofl-tab"        role="tab" aria-selected="false" data-tab="ios"><i class="fab fa-apple"></i> iPhone / iPad</button>
-                <button class="ofl-tab"        role="tab" aria-selected="false" data-tab="desktop"><i class="fas fa-desktop"></i> Escritorio</button>
+                <button class="ofl-tab active" role="tab" aria-selected="true"  aria-controls="ofl-android"  id="tab-android"  tabindex="0" data-tab="android"><i class="fab fa-android" aria-hidden="true"></i> Android</button>
+                <button class="ofl-tab"        role="tab" aria-selected="false" aria-controls="ofl-ios"      id="tab-ios"      tabindex="-1" data-tab="ios"><i class="fab fa-apple" aria-hidden="true"></i> iPhone / iPad</button>
+                <button class="ofl-tab"        role="tab" aria-selected="false" aria-controls="ofl-desktop"  id="tab-desktop"  tabindex="-1" data-tab="desktop"><i class="fas fa-desktop" aria-hidden="true"></i> Escritorio</button>
             </div>
 
             <!-- ── Android ── -->
-            <div class="ofl-panel" id="ofl-android">
+            <div class="ofl-panel" id="ofl-android" role="tabpanel" aria-labelledby="tab-android">
                 <ol class="ofl-steps">
                     <li>
                         <span class="ofl-step-num">1</span>
@@ -495,7 +509,7 @@
                         <span class="ofl-step-num">2</span>
                         <div>
                             <strong>Toca el botón de instalación</strong>
-                            <p>Aparecerá un banner en la parte inferior o un icono <i class="fas fa-download"></i> en la barra superior. Tócalo y confirma <em>"Instalar"</em>.</p>
+                            <p>Aparecerá un banner en la parte inferior o un icono <i class="fas fa-download" aria-hidden="true"></i> en la barra superior. Tócalo y confirma <em>"Instalar"</em>.</p>
                         </div>
                     </li>
                     <li>
@@ -514,13 +528,13 @@
                     </li>
                 </ol>
                 <div class="ofl-tip">
-                    <i class="fas fa-lightbulb"></i>
-                    <span>Si no ves el banner de instalación, en Chrome toca el menú <i class="fas fa-ellipsis-v"></i> y busca <em>"Añadir a pantalla de inicio"</em>.</span>
+                    <i class="fas fa-lightbulb" aria-hidden="true"></i>
+                    <span>Si no ves el banner de instalación, en Chrome toca el menú <i class="fas fa-ellipsis-v" aria-hidden="true"></i> y busca <em>"Añadir a pantalla de inicio"</em>.</span>
                 </div>
             </div>
 
             <!-- ── iOS ── -->
-            <div class="ofl-panel hidden" id="ofl-ios">
+            <div class="ofl-panel hidden" id="ofl-ios" role="tabpanel" aria-labelledby="tab-ios">
                 <ol class="ofl-steps">
                     <li>
                         <span class="ofl-step-num">1</span>
@@ -533,7 +547,7 @@
                         <span class="ofl-step-num">2</span>
                         <div>
                             <strong>Pulsa el botón Compartir</strong>
-                            <p>En la barra inferior (iPhone) o superior (iPad), toca el icono <i class="fas fa-arrow-up-from-bracket"></i> de compartir.</p>
+                            <p>En la barra inferior (iPhone) o superior (iPad), toca el icono <i class="fas fa-arrow-up-from-bracket" aria-hidden="true"></i> de compartir.</p>
                         </div>
                     </li>
                     <li>
@@ -552,13 +566,13 @@
                     </li>
                 </ol>
                 <div class="ofl-tip">
-                    <i class="fas fa-lightbulb"></i>
+                    <i class="fas fa-lightbulb" aria-hidden="true"></i>
                     <span>Las notificaciones offline en iOS requieren iOS 16.4 o superior con la app instalada como PWA.</span>
                 </div>
             </div>
 
             <!-- ── Escritorio ── -->
-            <div class="ofl-panel hidden" id="ofl-desktop">
+            <div class="ofl-panel hidden" id="ofl-desktop" role="tabpanel" aria-labelledby="tab-desktop">
                 <ol class="ofl-steps">
                     <li>
                         <span class="ofl-step-num">1</span>
@@ -571,7 +585,7 @@
                         <span class="ofl-step-num">2</span>
                         <div>
                             <strong>Instala desde la barra de direcciones</strong>
-                            <p>Verás un icono <i class="fas fa-download"></i> al final de la barra de URL o el botón de instalación arriba a la derecha en esta página. Haz clic e instala.</p>
+                            <p>Verás un icono <i class="fas fa-download" aria-hidden="true"></i> al final de la barra de URL o el botón de instalación arriba a la derecha en esta página. Haz clic e instala.</p>
                         </div>
                     </li>
                     <li>
@@ -590,27 +604,27 @@
                     </li>
                 </ol>
                 <div class="ofl-tip">
-                    <i class="fas fa-lightbulb"></i>
+                    <i class="fas fa-lightbulb" aria-hidden="true"></i>
                     <span>En Edge, si no ves el botón de instalación, ve a <em>Configuración → Aplicaciones → Instalar este sitio como app</em>.</span>
                 </div>
             </div>
 
             <!-- Qué funciona offline -->
             <div class="ofl-features">
-                <p class="ofl-features-title"><i class="fas fa-check-circle"></i> Qué funciona sin conexión</p>
+                <p class="ofl-features-title"><i class="fas fa-check-circle" aria-hidden="true"></i> Qué funciona sin conexión</p>
                 <div class="ofl-features-grid">
-                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Timer completo</span>
-                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Todos los presets</span>
-                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Modo oscuro</span>
-                    <span class="ofl-feat ok"><i class="fas fa-check"></i> Sonidos guardados</span>
-                    <span class="ofl-feat warn"><i class="fas fa-exclamation"></i> Sonidos nuevos requieren conexión la primera vez</span>
-                    <span class="ofl-feat warn"><i class="fas fa-exclamation"></i> Notificaciones: depende del navegador</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check" aria-hidden="true"></i> Timer completo</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check" aria-hidden="true"></i> Todos los presets</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check" aria-hidden="true"></i> Modo oscuro</span>
+                    <span class="ofl-feat ok"><i class="fas fa-check" aria-hidden="true"></i> Sonidos guardados</span>
+                    <span class="ofl-feat warn"><i class="fas fa-exclamation" aria-hidden="true"></i> Sonidos nuevos requieren conexión la primera vez</span>
+                    <span class="ofl-feat warn"><i class="fas fa-exclamation" aria-hidden="true"></i> Notificaciones: depende del navegador</span>
                 </div>
             </div>
 
             <!-- Actualizaciones -->
             <div class="ofl-update-note">
-                <i class="fas fa-sync-alt"></i>
+                <i class="fas fa-sync-alt" aria-hidden="true"></i>
                 <span>La app se actualiza automáticamente en segundo plano cuando hay conexión. No necesitas reinstalarla.</span>
             </div>
 
@@ -618,6 +632,9 @@
     </div>
 
     <div id="pomo-toast" aria-live="polite" aria-atomic="true"></div>
+    <!-- Anuncios de cambio de fase para lectores de pantalla -->
+    <div id="pomo-announcer" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+    <script src="i18n.js" defer></script>
     <script src="pomodoro.js" defer></script>
     <script src="sw-register.js" defer></script>
 </body>

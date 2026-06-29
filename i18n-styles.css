@@ -1,0 +1,66 @@
+/* ==================== SELECTOR DE IDIOMA ==================== */
+/*
+ * Bloque de estilos para agregar al final de pomodoro.css,
+ * justo antes del último bloque de breakpoints o al final del archivo.
+ *
+ * El selector se renderiza como tres botones pill en .top-buttons,
+ * a la izquierda del botón de tema y del botón de instalación.
+ */
+
+/* Contenedor de los botones de idioma */
+.lang-selector {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: auto; /* empuja install + theme a la derecha */
+}
+
+/* Botón individual de idioma */
+.lang-btn {
+    padding: 5px 11px;
+    border: 1.5px solid var(--border);
+    border-radius: 50px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.lang-btn:hover {
+    border-color: var(--accent-work);
+    color: var(--text-primary);
+}
+
+.lang-btn.active,
+.lang-btn[aria-pressed="true"] {
+    background: var(--accent-work);
+    border-color: var(--accent-work);
+    color: white;
+}
+
+/* Focus visible proporcional */
+.lang-btn:focus-visible {
+    outline: 3px solid var(--accent-work);
+    outline-offset: 3px;
+    border-radius: 50px;
+}
+
+/* Móvil: botones más compactos */
+@media (max-width: 480px) {
+    .lang-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Móvil muy pequeño: ocultar label "Idioma" si lo hubiera */
+@media (max-width: 360px) {
+    .lang-selector-label {
+        display: none;
+    }
+}

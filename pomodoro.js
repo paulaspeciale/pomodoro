@@ -62,8 +62,8 @@ function syncAmbientUI() {
     toggle.innerHTML = isActive
         ? '<i class="fas fa-volume-up"></i>'
         : '<i class="fas fa-volume-mute"></i>';
-    // Actualizar aria-label según el estado real para lectores de pantalla
-    toggle.setAttribute('aria-label', isActive ? 'Silenciar sonido ambiental' : 'Activar sonido ambiental');
+    const _t = window.i18n?.t ?? (k => k);
+    toggle.setAttribute('aria-label', isActive ? _t('ambientToggleOff') : _t('ambientToggleOn'));
     slider.style.opacity = currentAmbient ? '1' : '0.4';
 }
 
@@ -79,12 +79,16 @@ function initAmbientControls() {
             slider.value  = currentVolume;
         }
     } catch (_) {}
+    // Inicializar aria-valuetext del slider con el porcentaje legible
+    slider.setAttribute('aria-valuetext', `${Math.round(currentVolume * 100)}%`);
 
     select.addEventListener('change', (e) => playAmbient(e.target.value));
     document.getElementById('ambient-toggle').addEventListener('click', toggleAmbientSound);
 
     slider.addEventListener('input', (e) => {
         currentVolume = parseFloat(e.target.value);
+        // Actualizar texto legible del valor del slider para lectores de pantalla
+        slider.setAttribute('aria-valuetext', `${Math.round(currentVolume * 100)}%`);
         try { localStorage.setItem('ambientVolume', currentVolume); } catch (_) {}
         if (ambientSound) {
             ambientSound.volume(currentVolume);
@@ -192,7 +196,7 @@ async function playAmbient(type) {
                 try { localSound.unload(); } catch (_) {}
                 return;
             }
-            showToast('\u26A0\uFE0F No se pudo cargar el sonido.');
+            showToast((window.i18n?.t ?? (k=>k))('toastLoadError'));
             ambientSound  = null;
             currentAmbient = null;
             // Resetear el selector para que refleje el estado real
@@ -336,7 +340,7 @@ function buildBgScene(bg, type) {
     if (type === 'pink') {
         // Espectrograma: número de barras adaptado a mobile/desktop
         const isMobile = window.matchMedia('(max-width: 480px)').matches;
-        const barCount = isMobile ? 22 : 38;
+        const barCount = isMobile ? 30 : 55;
         const wrap = el('div', 'amb-pink-bars');
         for (let i = 0; i < barCount; i++) {
             // Perfil de alturas tipo "campana" — barras centrales más altas
@@ -520,7 +524,7 @@ async function isSoundCached(url) {
 
 async function cacheAmbientSound(type, url) {
     if (!('caches' in window)) {
-        showToast('⚠️ Tu navegador no soporta caché offline.');
+        showToast((window.i18n?.t ?? (k=>k))('offlineNoSupport'));
         return;
     }
 
@@ -535,7 +539,7 @@ async function cacheAmbientSound(type, url) {
     // Deshabilitar inmediatamente (antes de cualquier await) para prevenir doble-clic
     btn.disabled = true;
     btn.classList.add('downloading');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${(window.i18n?.t ?? (k=>k))('offlineDownloading')}`;
     progressWrap.style.display = 'block';
     cacheProgressBar.style.width = '0%';
     // Pequeño rAF para que el navegador pinte el 0% antes de saltar a 10%
@@ -545,7 +549,7 @@ async function cacheAmbientSound(type, url) {
     if (currentAmbient !== capturedType) {
         btn.disabled = false;
         btn.classList.remove('downloading');
-        btn.innerHTML = '<i class="fas fa-download"></i> Guardar offline';
+        btn.innerHTML = `<i class="fas fa-download"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaveBtn')}`;
         progressWrap.style.display = 'none';
         return;
     }
@@ -562,7 +566,7 @@ async function cacheAmbientSound(type, url) {
             progressWrap.style.display = 'none';
             btn.disabled = false;
             btn.classList.remove('downloading');
-            btn.innerHTML = '<i class="fas fa-download"></i> Guardar offline';
+            btn.innerHTML = `<i class="fas fa-download"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaveBtn')}`;
             return;
         }
 
@@ -585,7 +589,7 @@ async function cacheAmbientSound(type, url) {
                     progressWrap.style.display = 'none';
                     btn.disabled = false;
                     btn.classList.remove('downloading');
-                    btn.innerHTML = '<i class="fas fa-download"></i> Guardar offline';
+                    btn.innerHTML = `<i class="fas fa-download"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaveBtn')}`;
                     return;
                 }
                 if (total > 0) {
@@ -612,9 +616,9 @@ async function cacheAmbientSound(type, url) {
         cacheProgressBar.style.width = '100%';
         btn.classList.remove('downloading');
         btn.classList.add('cached');
-        btn.innerHTML = '<i class="fas fa-check"></i> Guardado offline';
+        btn.innerHTML = `<i class="fas fa-check"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaved')}`;
         btn.disabled  = false;
-        showToast(`✅ ${ambientOptions[capturedType].name} disponible sin conexión`);
+        showToast(`✅ ${ambientOptions[capturedType].name} ${(window.i18n?.t ?? (k=>k))('offlineSaveSuccess')}`);
         setTimeout(() => { progressWrap.style.display = 'none'; }, 1200);
 
     } catch (err) {
@@ -622,10 +626,10 @@ async function cacheAmbientSound(type, url) {
         progressWrap.style.display = 'none';
         btn.disabled = false;
         btn.classList.remove('downloading');
-        btn.innerHTML = '<i class="fas fa-download"></i> Guardar offline';
+        btn.innerHTML = `<i class="fas fa-download"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaveBtn')}`;
         if (currentAmbient === capturedType) {
             console.error('Error cacheando sonido:', err);
-            showToast('❌ No se pudo guardar. Verifica tu conexión.');
+            showToast((window.i18n?.t ?? (k=>k))('offlineSaveError'));
         }
     }
 }
@@ -644,14 +648,14 @@ function updateBannerForSound(type, isCached) {
 
     if (isCached) {
         btn.classList.add('cached');
-        btn.innerHTML = '<i class="fas fa-check"></i> Guardado offline';
+        btn.innerHTML = `<i class="fas fa-check"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaved')}`;
         banner.classList.remove('hidden');
     } else {
         if (!navigator.onLine) {
             banner.classList.add('hidden');
             return;
         }
-        btn.innerHTML = '<i class="fas fa-download"></i> Guardar offline';
+        btn.innerHTML = `<i class="fas fa-download"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaveBtn')}`;
         banner.classList.remove('hidden');
     }
 }
@@ -676,20 +680,20 @@ function initInstallButton() {
     window.addEventListener('appinstalled', () => {
         btn.classList.add('hidden');
         deferredInstallPrompt = null;
-        showToast('✅ App instalada correctamente');
+        showToast((window.i18n?.t ?? (k=>k))('toastInstalled'));
     });
 
     btn.addEventListener('click', async () => {
         if (deferredInstallPrompt) {
             deferredInstallPrompt.prompt();
             const { outcome } = await deferredInstallPrompt.userChoice;
-            if (outcome === 'accepted') showToast('🎉 Instalando Pomodoro Timer...');
+            if (outcome === 'accepted') showToast((window.i18n?.t ?? (k=>k))('toastInstalling'));
             deferredInstallPrompt = null;
             btn.classList.add('hidden');
         } else if (navigator.standalone === false) {
-            showToast('📱 En Safari: toca Compartir → "Añadir a pantalla de inicio"');
+            showToast((window.i18n?.t ?? (k=>k))('toastIosTip'));
         } else {
-            showToast('ℹ️ Abre esta página en Chrome o Edge para instalarla');
+            showToast((window.i18n?.t ?? (k=>k))('toastBrowserTip'));
         }
     });
 
@@ -727,22 +731,57 @@ function initModals() {
     });
 }
 
+// Elemento que tenía el foco antes de abrir el modal (para restaurarlo al cerrar)
+let _lastFocusedElement = null;
+
 function restorePageScroll() {
     document.body.style.overflow = '';
 }
 
+const FOCUSABLE_SELECTORS = [
+    'a[href]', 'button:not([disabled])', 'input:not([disabled])',
+    'select:not([disabled])', 'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+].join(',');
+
+function trapFocus(modal, e) {
+    const focusable = Array.from(modal.querySelectorAll(FOCUSABLE_SELECTORS))
+        .filter(el => !el.closest('.hidden'));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+        if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+    }
+}
+
 function openModal(id) {
+    // Guardar foco actual para restaurarlo al cerrar
+    _lastFocusedElement = document.activeElement;
     // Cerrar modales abiertos sin restaurar scroll (se restaurará cuando abra el nuevo)
     closeAllModals(false);
     const modal   = document.getElementById(id);
     const overlay = document.getElementById('modal-overlay');
     if (!modal) { restorePageScroll(); return; }
+    // Registrar trap de foco — se elimina en closeAllModals
+    modal._focusTrapHandler = (e) => { if (e.key === 'Tab') trapFocus(modal, e); };
     // Esperar al transition del modal previo (250ms) antes de abrir el nuevo,
     // evitando que overflow:hidden quede atascado si dos modales se solapan.
     setTimeout(() => {
         overlay.classList.remove('hidden');
         modal.classList.remove('hidden');
-        requestAnimationFrame(() => modal.classList.add('open'));
+        // Ocultar el contenido principal para lectores de pantalla mientras el modal está abierto
+        const mainEl = document.getElementById('main-content');
+        if (mainEl) mainEl.setAttribute('aria-hidden', 'true');
+        requestAnimationFrame(() => {
+            modal.classList.add('open');
+            // Mover foco al primer elemento focusable dentro del modal
+            const firstFocusable = modal.querySelector(FOCUSABLE_SELECTORS);
+            if (firstFocusable) firstFocusable.focus();
+            modal.addEventListener('keydown', modal._focusTrapHandler);
+        });
         document.body.style.overflow = 'hidden';
     }, 260);
 }
@@ -750,6 +789,11 @@ function openModal(id) {
 function closeAllModals(restoreScroll = true) {
     document.querySelectorAll('.modal.open').forEach(m => {
         m.classList.remove('open');
+        // Eliminar focus trap del modal que se cierra
+        if (m._focusTrapHandler) {
+            m.removeEventListener('keydown', m._focusTrapHandler);
+            m._focusTrapHandler = null;
+        }
         setTimeout(() => {
             m.classList.add('hidden');
             // Si era el modal de sugerencias, restaurar el formulario por si
@@ -768,7 +812,15 @@ function closeAllModals(restoreScroll = true) {
         }, 250);
     });
     document.getElementById('modal-overlay').classList.add('hidden');
+    // Restaurar visibilidad del main para lectores de pantalla
+    const mainEl = document.getElementById('main-content');
+    if (mainEl) mainEl.removeAttribute('aria-hidden');
     if (restoreScroll) restorePageScroll();
+    // Restaurar foco al elemento que lo tenía antes de abrir el modal
+    if (_lastFocusedElement && typeof _lastFocusedElement.focus === 'function') {
+        try { _lastFocusedElement.focus(); } catch (_) {}
+        _lastFocusedElement = null;
+    }
 }
 
 function isAnyModalOpen() {
@@ -794,8 +846,9 @@ function initDonations() {
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
             navigator.clipboard.writeText(alias)
                 .then(() => {
-                    copyBtn.textContent = '✓ Copiado';
-                    setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+                    const _tc2 = window.i18n?.t ?? (k => k);
+                    copyBtn.textContent = _tc2('donationCopied');
+                    setTimeout(() => { copyBtn.textContent = _tc2('donationCopyBtn'); }, 2000);
                 })
                 .catch(() => _clipboardFallback(alias, copyBtn));
         } else {
@@ -819,13 +872,14 @@ function _clipboardFallback(text, btn) {
         const ok = document.execCommand('copy');
         document.body.removeChild(ta);
         if (ok) {
-            btn.textContent = '✓ Copiado';
-            setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+            const _tcf = window.i18n?.t ?? (k => k);
+            btn.textContent = _tcf('donationCopied');
+            setTimeout(() => { btn.textContent = _tcf('donationCopyBtn'); }, 2000);
         } else {
             throw new Error('execCommand returned false');
         }
     } catch (_) {
-        showToast('⚠️ No se pudo copiar. Alias: paula.speciale');
+        showToast((window.i18n?.t ?? (k=>k))('toastCopyFallback'));
     }
 }
 
@@ -863,7 +917,7 @@ function initSuggestionForm() {
             textarea.focus();
             textarea.classList.add('input-error');
             setTimeout(() => textarea.classList.remove('input-error'), 1200);
-            showToast('⚠️ Escribe tu mensaje antes de enviar');
+            showToast((window.i18n?.t ?? (k=>k))('toastMsgRequired'));
             return;
         }
 
@@ -872,7 +926,7 @@ function initSuggestionForm() {
             emailInput.focus();
             emailInput.classList.add('input-error');
             setTimeout(() => emailInput.classList.remove('input-error'), 1200);
-            showToast('⚠️ El email no parece válido');
+            showToast((window.i18n?.t ?? (k=>k))('toastEmailInvalid'));
             return;
         }
 
@@ -883,7 +937,7 @@ function initSuggestionForm() {
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${(window.i18n?.t ?? (k=>k))('suggestionSubmitting')}`;
 
         // Construir payload para FormSubmit AJAX
         const payload = {
@@ -919,7 +973,7 @@ function initSuggestionForm() {
             if (emailInput) emailInput.value = '';
             charCurrent.textContent = '0';
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+            submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${(window.i18n?.t ?? (k=>k))('suggestionSubmit')}`;
 
             // Restaurar formulario después de 4 s
             _suggestionRestoreTimeout = setTimeout(() => {
@@ -930,10 +984,23 @@ function initSuggestionForm() {
         })
         .catch(() => {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
-            showToast('❌ No se pudo enviar. Verifica tu conexión e inténtalo de nuevo.');
+            submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${(window.i18n?.t ?? (k=>k))('suggestionSubmit')}`;
+            showToast((window.i18n?.t ?? (k=>k))('toastSendError'));
         });
     });
+}
+
+
+// ==================== ANUNCIO ACCESIBLE DE FASES ====================
+// Usa el #pomo-announcer (aria-live="assertive") para que los lectores
+// de pantalla anuncien los cambios de fase sin interrumpir otros anuncios.
+function announcePhase(msg) {
+    const el = document.getElementById('pomo-announcer');
+    if (!el) return;
+    // Limpiar primero para forzar re-anuncio aunque el texto sea igual
+    el.textContent = '';
+    // Un tick de separación garantiza que el lector detecte el cambio
+    requestAnimationFrame(() => { el.textContent = msg; });
 }
 
 // ==================== TOAST ====================
@@ -1102,22 +1169,69 @@ function applyURLPreset() {
 }
 
 // ==================== TEMA ====================
+// Tres estados posibles guardados en localStorage 'themePreference':
+//   'dark'   → usuario forzó oscuro  → body.dark
+//   'light'  → usuario forzó claro   → body.light
+//   null     → sigue al sistema      → ni body.dark ni body.light
+//
+// El CSS refleja esto con:
+//   @media (prefers-color-scheme: dark) { body:not(.light) }  ← sistema oscuro
+//   body.dark  ← forzado oscuro
+//   body.light ← forzado claro (anula la media query)
+
+function _applyTheme(pref) {
+    // pref: 'dark' | 'light' | null
+    document.body.classList.remove('dark', 'light');
+    if (pref === 'dark')  document.body.classList.add('dark');
+    if (pref === 'light') document.body.classList.add('light');
+
+    // El botón siempre muestra la acción a realizar, no el estado actual.
+    // Si estamos en oscuro (por preferencia guardada O por sistema), ofrecer claro (☀️ → irá a claro).
+    // Si estamos en claro, ofrecer oscuro (🌙 → irá a oscuro).
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const effectiveDark = pref === 'dark' || (pref === null && systemDark);
+    themeToggle.innerHTML = effectiveDark
+        ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
+    const _tTheme = window.i18n?.t ?? (k => k);
+    themeToggle.setAttribute('aria-label', effectiveDark ? _tTheme('themeToggleToLight') : _tTheme('themeToggleToDark'));
+}
+
 function initTheme() {
-    let isDark;
-    try {
-        const saved = localStorage.getItem('darkMode');
-        isDark = saved !== null ? saved === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } catch (_) {
-        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let pref = null;
+    try { pref = localStorage.getItem('themePreference'); } catch (_) {}
+
+    // Migrar preferencia guardada con el sistema anterior ('darkMode': 'true'/'false')
+    if (pref === null) {
+        try {
+            const legacy = localStorage.getItem('darkMode');
+            if (legacy === 'true')  { pref = 'dark';  localStorage.setItem('themePreference', 'dark'); }
+            if (legacy === 'false') { pref = 'light'; localStorage.setItem('themePreference', 'light'); }
+            if (legacy !== null) localStorage.removeItem('darkMode');
+        } catch (_) {}
     }
 
-    document.body.classList.toggle('dark', isDark);
-    themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    _applyTheme(pref);
+
+    // Escuchar cambios del sistema en tiempo real (solo si no hay preferencia guardada)
+    try {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            let current = null;
+            try { current = localStorage.getItem('themePreference'); } catch (_) {}
+            if (current === null) _applyTheme(null); // sin preferencia guardada: seguir al sistema
+        });
+    } catch (_) {}
 
     themeToggle.addEventListener('click', () => {
-        const isDarkNow = document.body.classList.toggle('dark');
-        try { localStorage.setItem('darkMode', isDarkNow); } catch (_) {}
-        themeToggle.innerHTML = isDarkNow ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        let current = null;
+        try { current = localStorage.getItem('themePreference'); } catch (_) {}
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const effectiveDark = current === 'dark' || (current === null && systemDark);
+
+        // Toggle: si estaba oscuro → claro forzado; si estaba claro → oscuro forzado
+        const next = effectiveDark ? 'light' : 'dark';
+        try { localStorage.setItem('themePreference', next); } catch (_) {}
+        _applyTheme(next);
     });
 }
 
@@ -1170,7 +1284,8 @@ function initConfigControls() {
     if (cyclesInput) {
         const updateCyclesLabel = () => {
             const label = document.getElementById('cycles-unit-label');
-            if (label) label.textContent = parseInt(cyclesInput.value) === 1 ? 'ciclo' : 'ciclos';
+            const _tc = window.i18n?.t ?? (k => k);
+            if (label) label.textContent = parseInt(cyclesInput.value) === 1 ? _tc('unitCycle') : _tc('unitCycles');
         };
         cyclesInput.addEventListener('input', updateCyclesLabel);
         updateCyclesLabel();
@@ -1183,14 +1298,26 @@ function initConfigControls() {
             workInput.value   = btn.dataset.work;
             breakInput.value  = btn.dataset.break;
             cyclesInput.value = btn.dataset.cycles;
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
+            });
             btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
             updateSummary();
         });
     });
 
+    // Sincronizar aria-pressed junto con la clase active
+    const syncActivePresetAria = () => {
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            const isActive = btn.classList.contains('active');
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    };
+
     // rAF garantiza que Safari haya pintado los valores por defecto del HTML antes de marcar preset
-    requestAnimationFrame(syncActivePreset);
+    requestAnimationFrame(() => { syncActivePreset(); syncActivePresetAria(); });
 
     if (startBtn) startBtn.addEventListener('click', iniciarPomodoros);
 
@@ -1222,9 +1349,10 @@ function updateSummary() {
     const m = totalMin % 60;
     const summaryEl = document.getElementById('config-summary');
     if (!summaryEl) return;
+    const _ts = window.i18n?.t ?? (k => k);
     summaryEl.innerHTML = h > 0
-        ? `Total estimado: <strong>${h}h ${m > 0 ? m + ' min' : '0 min'}</strong>`
-        : `Total estimado: <strong>${m} min</strong>`;
+        ? `${_ts('totalEstimated')} <strong>${h}h ${m > 0 ? m + ' min' : '0 min'}</strong>`
+        : `${_ts('totalEstimated')} <strong>${m} min</strong>`;
 }
 
 // ==================== HELPERS ====================
@@ -1265,7 +1393,7 @@ function iniciarPomodoros() {
     countdownDiv.classList.add('active');
 
     const descansoLabel = document.getElementById('descanso-label');
-    if (descansoLabel) descansoLabel.textContent = `${breakMinutes} minutos de descanso`;
+    if (descansoLabel) descansoLabel.textContent = `${breakMinutes} ${(window.i18n?.t ?? (k=>k))('breakMinutesLabel')}`;
 
     ciclosTotales = ciclos;
     cicloActual   = 0;
@@ -1278,10 +1406,12 @@ function iniciarPomodoros() {
 }
 
 function resetPauseState() {
+    const _t = window.i18n?.t ?? (k => k);
     isPaused = false;
     pauseBtn.disabled = false;
     pauseBtn.removeAttribute('aria-disabled');
-    pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pausar</span>';
+    pauseBtn.innerHTML = `<i class="fas fa-pause" aria-hidden="true"></i><span>${_t('btnPause')}</span>`;
+    pauseBtn.setAttribute('aria-label', _t('ariaPause'));
     pauseBtn.classList.remove('paused');
     document.body.classList.remove('timer-paused');
     // El resume del audio ambiental se hace en startTimer(), una vez que el
@@ -1303,8 +1433,10 @@ function iniciarCicloTrabajo() {
 
     resetPauseState();
 
+    const _t = window.i18n?.t ?? (k => k);
     playPhaseChangeSound(false);
-    showNotification('🟥 Pomodoro', `Ciclo ${cicloActual}/${ciclosTotales} — ¡Enfócate!`);
+    showNotification(_t('notifWorkTitle'), `${_t('cycleLabel')} ${cicloActual}/${ciclosTotales} ${_t('notifWorkBody')}`);
+    announcePhase(`${_t('cycleLabel')} ${cicloActual} ${_t('cycleOf')} ${ciclosTotales}. ${_t('announceWork')} ${workMinutes} ${_t('unitMin')}.`);
 
     actualizarPantalla();
     startTimer();
@@ -1321,8 +1453,10 @@ function iniciarDescanso() {
 
     resetPauseState();
 
+    const _t2 = window.i18n?.t ?? (k => k);
     playPhaseChangeSound(true);
-    showNotification('🟩 Descanso', `Ciclo ${cicloActual}/${ciclosTotales} — Recupera energías`);
+    showNotification(_t2('notifBreakTitle'), `${_t2('cycleLabel')} ${cicloActual}/${ciclosTotales} ${_t2('notifBreakBody')}`);
+    announcePhase(`${_t2('announceBreak')} ${breakMinutes} ${_t2('announceBreakDuration')}`);
 
     actualizarPantalla();
     startTimer();
@@ -1442,11 +1576,13 @@ function handleTimerVisibilityChange() {
 }
 
 function togglePause() {
+    const _t = window.i18n?.t ?? (k => k);
     isPaused = !isPaused;
-    const icon = isPaused ? 'play' : 'pause';
-    const text = isPaused ? 'Reanudar' : 'Pausar';
+    const icon  = isPaused ? 'play' : 'pause';
+    const text  = isPaused ? _t('btnResume') : _t('btnPause');
 
-    pauseBtn.innerHTML = `<i class="fas fa-${icon}"></i><span>${text}</span>`;
+    pauseBtn.innerHTML = `<i class="fas fa-${icon}" aria-hidden="true"></i><span>${text}</span>`;
+    pauseBtn.setAttribute('aria-label', isPaused ? _t('ariaResume') : _t('ariaPause'));
     pauseBtn.classList.toggle('paused', isPaused);
     // Fix: usar clase en body para controlar animación pulseTimer correctamente
     document.body.classList.toggle('timer-paused', isPaused);
@@ -1470,6 +1606,7 @@ function togglePause() {
 function snapProgressBar(pct) {
     progressBar.style.transition = 'none';
     progressBar.style.width = `${pct}%`;
+    progressBar.setAttribute('aria-valuenow', Math.round(pct));
     // Forzar reflow síncrono leyendo offsetWidth — garantiza que el navegador ha
     // pintado el frame sin transición antes de restaurarla, eliminando la dependencia
     // del timing del doble-rAF que podía restaurar la transición prematuramente.
@@ -1491,20 +1628,27 @@ function actualizarPantalla() {
     } else {
         progressBar.style.width = `${porcentaje}%`;
     }
+    const _ta = window.i18n?.t ?? (k => k);
+    progressBar.setAttribute('aria-valuenow', Math.round(porcentaje));
+    progressBar.setAttribute('aria-label',
+        isDescanso ? _ta('ariaBreakTimer') : _ta('ariaWorkTimer'));
 
     countdownDiv.classList.toggle('descanso-mode', isDescanso);
+
+    // Actualizar aria-label del timer según la fase activa
+    timerDisplay.setAttribute('aria-label', _ta('ariaWorkTimer'));
+    descansoTime.setAttribute('aria-label', _ta('ariaBreakTimer'));
 
     if (isDescanso) {
         trabajoContainer.classList.add('hidden');
         descansoContainer.classList.remove('hidden');
-        modoActual.textContent = 'DESCANSO';
-        // Fix: clases CSS en lugar de inline style — estilos definidos en pomodoro.css
+        modoActual.textContent = _ta('modeBreak');
         modoActual.parentElement.classList.remove('mode-work');
         modoActual.parentElement.classList.add('mode-break');
     } else {
         trabajoContainer.classList.remove('hidden');
         descansoContainer.classList.add('hidden');
-        modoActual.textContent = 'TRABAJO';
+        modoActual.textContent = _ta('modeWork');
         modoActual.parentElement.classList.remove('mode-break');
         modoActual.parentElement.classList.add('mode-work');
     }
@@ -1615,7 +1759,7 @@ function resetSessionState() {
         estadoEl.classList.remove('hidden', 'mode-break');
         estadoEl.classList.add('mode-work');
     }
-    modoActual.textContent = 'TRABAJO';
+    modoActual.textContent = (window.i18n?.t ?? (k => k))('modeWork');
 
     const progressContainer = countdownDiv.querySelector('.progress-container');
     const controls = countdownDiv.querySelector('.controls');
@@ -1624,24 +1768,82 @@ function resetSessionState() {
     if (controls) controls.classList.remove('hidden');
     if (infoCiclo) infoCiclo.classList.remove('hidden');
 
+    const _t = window.i18n?.t ?? (k => k);
     pauseBtn.disabled = false;
     pauseBtn.removeAttribute('aria-disabled');
     pauseBtn.style.display = '';
-    pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pausar</span>';
+    pauseBtn.innerHTML = `<i class="fas fa-pause" aria-hidden="true"></i><span>${_t('btnPause')}</span>`;
+    pauseBtn.setAttribute('aria-label', _t('ariaPause'));
     pauseBtn.classList.remove('paused');
     resetBtn.disabled = false;
     resetBtn.removeAttribute('aria-disabled');
     resetBtn.style.display = '';
-    resetBtn.innerHTML = '<i class="fas fa-redo"></i> Reiniciar';
+    resetBtn.innerHTML = `<i class="fas fa-redo"></i> <span>${_t('btnReset')}</span>`;
 
     cicloActualEl.textContent = '1';
     cicloTotalEl.textContent = ciclosTotales;
     timerDisplay.textContent = formatTime(tiempoActual);
     descansoTime.textContent = formatTime(breakMinutes * 60);
     const descansoLabel = document.getElementById('descanso-label');
-    if (descansoLabel) descansoLabel.textContent = `${breakMinutes} minutos de descanso`;
+    if (descansoLabel) descansoLabel.textContent = `${breakMinutes} ${(window.i18n?.t ?? (k=>k))('breakMinutesLabel')}`;
     progressBar.style.width = '100%';
     updateSummary();
+}
+
+// Reinicia el timer desde el ciclo 1 manteniéndose en la vista del countdown.
+// A diferencia de resetSessionState(), NO vuelve a la pantalla de configuración.
+// Se llama desde el flujo de confirmación del botón Reiniciar.
+function _restartFromBeginning() {
+    clearInterval(intervalo);
+    intervalo = null;
+    if (_confettiInterval) { clearInterval(_confettiInterval); _confettiInterval = null; }
+
+    sessionFinished   = false;
+    isPaused          = false;
+    isTransitioning   = false;
+    hiddenAt          = null;
+    timerWasRunningWhenHidden = false;
+    phaseStartTime    = null;
+    phaseStartSeconds = 0;
+    isDescanso        = false;
+
+    workMinutes   = readClampedValue(document.getElementById('work-minutes'),  1, 180);
+    breakMinutes  = readClampedValue(document.getElementById('break-minutes'),  1,  60);
+    ciclosTotales = readClampedValue(document.getElementById('ciclos-input'),   1,  20);
+    cicloActual   = 0;
+    tiempoActual  = workMinutes * 60;
+    tiempoInicial = tiempoActual;
+    _suppressProgressTransition = true;
+
+    cleanupAudioState();
+    audioCleanedUp = false;
+
+    // Limpiar pantalla de fin si estaba visible
+    const finEl = document.getElementById('fin-sesion');
+    if (finEl) finEl.remove();
+    _finScreenRendered = false;
+
+    // Restaurar elementos que podrían estar ocultos tras una sesión finalizada
+    const progressContainer = countdownDiv.querySelector('.progress-container');
+    const controls          = countdownDiv.querySelector('.controls');
+    const infoCiclo         = countdownDiv.querySelector('.info-ciclo');
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (controls)          controls.classList.remove('hidden');
+    if (infoCiclo)         infoCiclo.classList.remove('hidden');
+
+    // Restaurar botones (pueden estar ocultos/deshabilitados si la sesión había finalizado)
+    const _t = window.i18n?.t ?? (k => k);
+    pauseBtn.style.display = '';
+    resetBtn.style.display = '';
+    resetBtn.innerHTML = `<i class="fas fa-redo"></i> <span>${_t('btnReset')}</span>`;
+    document.body.classList.remove('timer-paused');
+
+    const descansoLabel = document.getElementById('descanso-label');
+    if (descansoLabel) descansoLabel.textContent = `${breakMinutes} ${_t('breakMinutesLabel')}`;
+
+    // iniciarCicloTrabajo() llama a resetPauseState() y actualizarPantalla(),
+    // que restauran el badge, los contenedores trabajo/descanso y el display.
+    iniciarCicloTrabajo();
 }
 
 function finalizarTodo() {
@@ -1669,14 +1871,16 @@ function finalizarTodo() {
     // Hide action buttons entirely on session end — disable + hide is cleaner than
     // showing a greyed-out "Reiniciar" button next to the new "Nueva sesión" button.
     pauseBtn.style.display = 'none';
-    resetBtn.innerHTML = '<i class="fas fa-redo"></i> Reiniciar'; // restaurar en caso de que estuviera en modo ¿Confirmar?
+    resetBtn.innerHTML = `<i class="fas fa-redo"></i> <span>${(window.i18n?.t ?? (k=>k))('btnReset')}</span>`; // restaurar en caso de que estuviera en modo ¿Confirmar?
     resetBtn.style.display = 'none';
     resetBtn.disabled = true;
 
     // Actualizar el DOM de pantalla final ANTES de limpiar el audio: así el fade-out
     // del fondo ambiental (1.2 s) ocurre mientras la pantalla de fin ya está visible,
     // evitando el flash visual que producía limpiar el fondo antes de pintar la UI.
-    showNotification('🎉 ¡Completado!', 'Has terminado todos los ciclos. ¡Excelente trabajo!');
+    const _tFin = window.i18n?.t ?? (k => k);
+    showNotification(_tFin('notifDoneTitle'), _tFin('notifDoneBody'));
+    announcePhase(`${_tFin('announceDone')} ${ciclosTotales} ${_tFin('announceDoneCycles')}`);
     launchVictoryConfetti();
     mostrarPantallaFin();
     cleanupAudioState();
@@ -1708,16 +1912,18 @@ function mostrarPantallaFin() {
 
         const title = document.createElement('h2');
         title.style.cssText = 'font-size:1.6rem;font-weight:700;color:var(--accent-break);margin-bottom:8px';
-        title.textContent = '¡Sesión completada!';
+        const _tFin2 = window.i18n?.t ?? (k => k);
+        title.textContent = _tFin2('sessionComplete');
 
         const desc = document.createElement('p');
         desc.style.cssText = 'color:var(--text-secondary);font-size:0.95rem;margin-bottom:28px';
-        desc.textContent = 'Has completado ';
+        desc.textContent = `${_tFin2('sessionCompleteDesc1')} `;
         const strong = document.createElement('strong');
         strong.style.color = 'var(--text-primary)';
-        strong.textContent = `${ciclosTotales} ciclo${ciclosTotales !== 1 ? 's' : ''}`;
+        const cycleWord = ciclosTotales !== 1 ? _tFin2('sessionCompleteDesc2cycles') : _tFin2('sessionCompleteDesc2cycle');
+        strong.textContent = `${ciclosTotales} ${cycleWord}`;
         desc.appendChild(strong);
-        desc.appendChild(document.createTextNode(' de trabajo. ¡Excelente esfuerzo!'));
+        desc.appendChild(document.createTextNode(` ${_tFin2('sessionCompleteDesc3')}`));
 
         const btn = document.createElement('button');
         btn.id = 'nueva-sesion-btn';
@@ -1742,7 +1948,7 @@ function mostrarPantallaFin() {
         const btnIcon = document.createElement('i');
         btnIcon.className = 'fas fa-redo';
         btn.appendChild(btnIcon);
-        btn.appendChild(document.createTextNode(' Nueva sesión'));
+        btn.appendChild(document.createTextNode(` ${_tFin2('btnNewSession')}`));
 
         finEl.appendChild(emoji);
         finEl.appendChild(title);
@@ -1763,6 +1969,52 @@ function mostrarPantallaFin() {
     if (infoCiclo)         infoCiclo.classList.add('hidden');
 }
 
+// ==================== SINCRONIZACIÓN I18N DINÁMICA ====================
+// Re-sincroniza los elementos que pomodoro.js gestiona directamente y que
+// no están cubiertos por data-i18n estático (dependen del estado del timer).
+function _syncDynamicI18n() {
+    if (!window.i18n) return;
+    const { t } = window.i18n;
+
+    // Badge de modo (TRABAJO / DESCANSO)
+    if (modoActual) {
+        modoActual.textContent = isDescanso ? t('modeBreak') : t('modeWork');
+    }
+
+    // Label de descanso ("10 minutos de descanso")
+    const descansoLabel = document.getElementById('descanso-label');
+    if (descansoLabel) {
+        descansoLabel.textContent = `${breakMinutes} ${t('breakMinutesLabel')}`;
+    }
+
+    // Unidad de ciclos
+    const cyclesLabel = document.getElementById('cycles-unit-label');
+    if (cyclesLabel) {
+        const val = parseInt(document.getElementById('ciclos-input')?.value) || 4;
+        cyclesLabel.textContent = val === 1 ? t('unitCycle') : t('unitCycles');
+    }
+
+    // Botón pausa — depende de isPaused y estado de sesión
+    if (pauseBtn && !sessionFinished) {
+        const icon  = isPaused ? 'play' : 'pause';
+        const label = isPaused ? t('btnResume') : t('btnPause');
+        pauseBtn.innerHTML = `<i class="fas fa-${icon}" aria-hidden="true"></i><span>${label}</span>`;
+        pauseBtn.setAttribute('aria-label', isPaused ? t('ariaResume') : t('ariaPause'));
+    }
+
+    // Resumen de configuración
+    updateSummary();
+
+    // Aria-label del botón de tema — depende de si el tema efectivo es oscuro
+    if (themeToggle) {
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let pref = null;
+        try { pref = localStorage.getItem('themePreference'); } catch (_) {}
+        const effectiveDark = pref === 'dark' || (pref === null && systemDark);
+        themeToggle.setAttribute('aria-label', effectiveDark ? t('themeToggleToLight') : t('themeToggleToDark'));
+    }
+}
+
 // Referencia al listener onClickOutside del resetBtn guardada a nivel de módulo.
 // Permite que removeEventListener siempre elimine exactamente la función registrada,
 // incluso entre llamadas rápidas al botón, sin depender del closure del setTimeout.
@@ -1771,7 +2023,16 @@ let _resetConfirming = false;
 let _resetCancelTimeout = null;
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // ── i18n: inicializar ANTES que cualquier otro init ──────────────
+    if (window.i18n) {
+        await window.i18n.init();
+        window.i18n.initLangSelector();
+        document.addEventListener('langchange', () => {
+            _syncDynamicI18n();
+        });
+    }
+
     // Fix: asignar refs DOM aquí para que sean seguras independientemente
     // de dónde esté el <script> (head con defer, body, etc.)
     ciclosContainer   = document.getElementById('ciclos-container');
@@ -1802,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data?.type === 'SW_FALLBACK_ACTIVE') {
-                showToast('Modo offline básico activo. Algunas funciones pueden tardar en cachearse.');
+                showToast((window.i18n?.t ?? (k=>k))('toastOfflineMode'));
             }
         });
     }
@@ -1820,7 +2081,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 _resetClickOutsideHandler = null;
             }
             _resetConfirming = false;
-            resetSessionState();
+            _restartFromBeginning();
             return;
         }
 
@@ -1833,7 +2094,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const originalHTML = resetBtn.innerHTML;
         _resetConfirming = true;
-        resetBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>¿Confirmar?</span>';
+        resetBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>${(window.i18n?.t ?? (k=>k))('btnConfirm')}</span>`;
 
         const cancelConfirm = () => {
             _resetConfirming = false;
@@ -1897,20 +2158,42 @@ function initOfflineGuide() {
     }
     _activateOfflineTab(modal, defaultTab);
 
-    // Delegación de eventos en las tabs
+    // Delegación de eventos en las tabs — clic y navegación por teclado
     modal.addEventListener('click', (e) => {
         const tab = e.target.closest('.ofl-tab[data-tab]');
         if (!tab) return;
         _activateOfflineTab(modal, tab.dataset.tab);
+        tab.focus();
+    });
+
+    // Patrón de roving tabindex: ArrowLeft/ArrowRight navegan entre tabs
+    modal.addEventListener('keydown', (e) => {
+        const tab = e.target.closest('.ofl-tab[role="tab"]');
+        if (!tab) return;
+        const tabs = Array.from(modal.querySelectorAll('.ofl-tab[role="tab"]'));
+        const idx  = tabs.indexOf(tab);
+        let next   = -1;
+        if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+        if (e.key === 'ArrowLeft')  next = (idx - 1 + tabs.length) % tabs.length;
+        if (e.key === 'Home')       next = 0;
+        if (e.key === 'End')        next = tabs.length - 1;
+        if (next !== -1) {
+            e.preventDefault();
+            _activateOfflineTab(modal, tabs[next].dataset.tab);
+            tabs[next].focus();
+        }
     });
 }
 
 function _activateOfflineTab(modal, tabId) {
-    // Actualizar tabs
-    modal.querySelectorAll('.ofl-tab').forEach(btn => {
+    const tabs = Array.from(modal.querySelectorAll('.ofl-tab'));
+    // Actualizar tabs con roving tabindex
+    tabs.forEach(btn => {
         const active = btn.dataset.tab === tabId;
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        // Roving tabindex: solo el tab activo es alcanzable con Tab
+        btn.setAttribute('tabindex', active ? '0' : '-1');
     });
     // Mostrar panel correcto
     modal.querySelectorAll('.ofl-panel').forEach(panel => {

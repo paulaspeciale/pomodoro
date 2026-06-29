@@ -35,6 +35,10 @@ const APP_SHELL_ASSETS = [
     // junto con el descubrimiento de sus assets — no duplicar aquí.
     './pomodoro.css',
     './pomodoro.js',
+    './i18n.js',
+    './locales/es.json',
+    './locales/en.json',
+    './locales/pt.json',
     './sw-register.js',
     './manifest.json',
     './img/icons/favicon.svg',
