@@ -49,6 +49,20 @@ const ambientOptions = {
     ocean:  { name: '🌊 Océano',       url: './sounds/ocean.mp3' }
 };
 
+// Clases de <body> que sincronizan --accent-work (color de botones y gradiente
+// de progreso) con el sonido ambiental activo. Los colores están definidos en
+// pomodoro.css junto a las animaciones de #ambient-bg correspondientes, para
+// que ambos se mantengan visualmente coherentes.
+const AMBIENT_ACCENT_CLASSES = ['amb-rain', 'amb-pink', 'amb-white', 'amb-forest', 'amb-ocean'];
+
+function syncAmbientAccentClass(type) {
+    document.body.classList.remove(...AMBIENT_ACCENT_CLASSES);
+    const cls = `amb-${type}`;
+    if (type && AMBIENT_ACCENT_CLASSES.includes(cls)) {
+        document.body.classList.add(cls);
+    }
+}
+
 // Actualiza ícono y opacidad del slider según estado real de Howl
 function syncAmbientUI() {
     const toggle = document.getElementById('ambient-toggle');
@@ -132,6 +146,7 @@ async function playAmbient(type) {
     if (type === 'none' || !ambientOptions[type]?.url) {
         currentAmbient = null;
         setAmbientBg(null);
+        syncAmbientAccentClass(null);
         syncAmbientUI();
         hideBanner();
         return;
@@ -140,6 +155,7 @@ async function playAmbient(type) {
     currentAmbient = type;
     userMutedAmbient = false;
     setAmbientBg(type);
+    syncAmbientAccentClass(type);
 
     // Capturar el tipo ANTES del await para que updateBannerForSound
     // siempre use el mismo tipo que este Howl, incluso si el usuario
@@ -163,6 +179,7 @@ async function playAmbient(type) {
         const sel = document.getElementById('ambient-select');
         if (sel) sel.value = 'none';
         setAmbientBg(null);
+        syncAmbientAccentClass(null);
         syncAmbientUI();
         return;
     }
@@ -203,6 +220,7 @@ async function playAmbient(type) {
             const sel = document.getElementById('ambient-select');
             if (sel) sel.value = 'none';
             setAmbientBg(null);
+            syncAmbientAccentClass(null);
             hideBanner();
             syncAmbientUI();
         },
@@ -1663,6 +1681,7 @@ function cleanupAudioState() {
     // instancia de playAmbient que esté en un await lo detecte y aborte.
     currentAmbient = null;
     userMutedAmbient = false; // Bug fix: restaurar mute manual para la próxima sesión
+    syncAmbientAccentClass(null);
 
     // Capturar la referencia ANTES de nulificar la variable global.
     // Si playAmbient() tiene un await pendiente y llega a asignar

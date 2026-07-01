@@ -1668,3 +1668,38 @@ body.timer-paused #descanso-time {
         display: none;
     }
 }
+
+/* ==================== COLOR DINÁMICO SEGÚN SONIDO AMBIENTAL ==================== */
+/*
+ * Sincroniza --accent-work (color de botones, badge "TRABAJO" y gradiente
+ * de la barra de progreso) con el sonido ambiental activo, usando la misma
+ * familia de color que su animación de fondo correspondiente en #ambient-bg.
+ *
+ * Especificidad: "body.amb-x" tiene la misma especificidad (elemento + 1 clase)
+ * que "body.dark" / "body.light" / "body:not(.light)". Al estar declarado al
+ * final del archivo, gana la cascada y sobreescribe el color de acento del
+ * tema activo mientras haya un sonido ambiental seleccionado. Al volver a
+ * "Sin sonido" se quita la clase y el color vuelve al del tema.
+ */
+body.amb-rain {
+    --accent-work: #3B93D9; /* celeste — misma familia que .amb-raindrop / .amb-ripple */
+}
+body.amb-pink {
+    --accent-work: #D1477A; /* rosa — misma familia que .amb-pink-bar / .amb-pink-glow */
+}
+body.amb-white {
+    --accent-work: #767676; /* gris — misma familia que .amb-pixel / .amb-freq-bar */
+}
+body.amb-forest {
+    --accent-work: #4C8C4A; /* verde — misma familia que .amb-glow / .amb-leaf */
+}
+body.amb-ocean {
+    --accent-work: #235789; /* azul — misma familia que el gradiente nocturno de #ambient-bg.ocean */
+}
+.donation-img-responsive {
+    max-width: 100%;
+    width: 180px;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+}
