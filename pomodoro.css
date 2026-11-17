@@ -1758,3 +1758,849 @@ body.amb-ocean {
     display: block;
     border-radius: 10px;
 }
+
+/* ================================================================
+   UI REFRESH v19
+   Capa de estilos final: jerarquía visual, anillo de progreso,
+   tarjetas, microinteracciones y ajustes responsive.
+   ================================================================ */
+
+/* ── Base ─────────────────────────────────────────────────────── */
+body {
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(1100px 520px at 50% -12%,
+            color-mix(in srgb, var(--accent-work) 10%, transparent), transparent 72%),
+        radial-gradient(820px 420px at 100% 100%,
+            color-mix(in srgb, var(--accent-break) 7%, transparent), transparent 70%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--accent-work) 32%, transparent);
+}
+
+main { max-width: 560px; }
+
+/* ── Cabecera / marca ─────────────────────────────────────────── */
+.brand {
+    text-align: center;
+    margin-bottom: 26px;
+}
+
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    margin-bottom: 14px;
+    border-radius: 18px;
+    font-size: 1.85rem;
+    background: var(--card);
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    box-shadow: 0 10px 26px var(--shadow);
+    user-select: none;
+}
+
+.brand h1 {
+    font-size: clamp(2.05rem, 5.2vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 8px;
+}
+
+.config-subtitle {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* ── Configuración ────────────────────────────────────────────── */
+.config-row {
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+.config-chip {
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 20px;
+    padding: 14px 10px 13px;
+    box-shadow: 0 3px 12px var(--shadow);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.config-chip:hover {
+    border-color: color-mix(in srgb, var(--accent-work) 42%, var(--border));
+}
+
+.config-chip:focus-within {
+    border-color: var(--accent-work);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-work) 16%, transparent);
+}
+
+.chip-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.09em;
+}
+
+.config-chip .time-input {
+    font-size: 1.95rem;
+    width: 62px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    border-radius: 10px;
+}
+
+.config-chip .time-unit {
+    font-size: 0.82rem;
+}
+
+.config-chip .time-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.config-chip .time-btn:hover {
+    background: color-mix(in srgb, var(--accent-work) 16%, var(--surface));
+    color: var(--accent-work-text);
+    transform: none;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.config-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 16px auto 20px;
+    padding: 9px 18px;
+    background: var(--surface);
+    border: 1px dashed color-mix(in srgb, var(--border) 85%, transparent);
+    border-radius: 999px;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.config-summary::before {
+    content: "⏱";
+    font-size: 0.95rem;
+}
+
+.config-summary strong { color: var(--text-primary); }
+
+/* ── Presets ──────────────────────────────────────────────────── */
+.presets { margin-bottom: 20px; }
+
+.presets-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.preset-btn {
+    flex: 1 1 auto;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease,
+                color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.preset-btn:hover {
+    border-color: var(--accent-work);
+    color: var(--accent-work-text);
+    transform: translateY(-1px);
+}
+
+.preset-btn:active { transform: translateY(0) scale(0.98); }
+
+.preset-btn.active {
+    background: var(--accent-work);
+    border-color: var(--accent-work);
+    color: #fff;
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-work) 30%, transparent);
+}
+
+/* ── Botón comenzar ───────────────────────────────────────────── */
+.start-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 16px 24px;
+    margin-top: 0;
+    font-size: 1.32rem;
+    letter-spacing: 0.01em;
+    border-radius: 18px;
+    background: var(--accent-work);
+    background-image: linear-gradient(135deg,
+        color-mix(in srgb, var(--accent-work) 92%, #fff),
+        color-mix(in srgb, var(--accent-work) 72%, #1a0a06));
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--accent-work) 28%, transparent);
+}
+
+.start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--accent-work) 34%, transparent);
+}
+
+.start-btn:active { transform: translateY(0) scale(0.995); }
+.start-btn i { font-size: 0.95em; }
+
+/* ── Tarjeta del temporizador ─────────────────────────────────── */
+.countdown {
+    position: relative;
+    margin: 8px 0 0;
+    padding: 20px 22px 22px;
+    border-radius: 30px;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    box-shadow: 0 24px 60px var(--shadow);
+    overflow: hidden;
+    animation: cardIn 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+.countdown::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -90px;
+    width: 380px;
+    height: 240px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center,
+        color-mix(in srgb, var(--accent-work) 20%, transparent), transparent 70%);
+    pointer-events: none;
+}
+
+.countdown-head {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.estado {
+    margin: 0;
+    padding: 7px 18px;
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    border-radius: 999px;
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-work) 30%, transparent);
+}
+
+.countdown-icon-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease,
+                background 0.2s ease, transform 0.2s ease;
+}
+
+.countdown-icon-btn:hover {
+    color: var(--accent-work-text);
+    border-color: var(--accent-work);
+    transform: rotate(-10deg);
+}
+
+.countdown-icon-btn.confirming {
+    background: var(--accent-work);
+    border-color: var(--accent-work);
+    color: #fff;
+    animation: pulseTimer 1s ease-in-out infinite;
+}
+
+#settings-btn:focus-visible {
+    outline: 3px solid var(--accent-work);
+    outline-offset: 3px;
+    border-radius: 12px;
+}
+
+/* ── Anillo de progreso ───────────────────────────────────────── */
+.timer-ring {
+    position: relative;
+    width: clamp(228px, 74vw, 296px);
+    aspect-ratio: 1;
+    margin: 6px auto 10px;
+    display: grid;
+    place-items: center;
+}
+
+.timer-ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+}
+
+.timer-ring-track {
+    fill: none;
+    stroke: var(--progress-bg);
+    stroke-width: 10;
+}
+
+.timer-ring-progress {
+    fill: none;
+    stroke: var(--accent-work);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.45s linear, stroke 0.35s ease;
+    filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent-work) 42%, transparent));
+}
+
+.countdown.descanso-mode .timer-ring-progress {
+    stroke: var(--accent-break);
+    filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent-break) 45%, transparent));
+}
+
+.timer-ring::after {
+    content: "";
+    position: absolute;
+    inset: 13%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 38%,
+        color-mix(in srgb, var(--accent-work) 12%, transparent), transparent 70%);
+    pointer-events: none;
+    transition: background 0.35s ease;
+}
+
+.countdown.descanso-mode .timer-ring::after {
+    background: radial-gradient(circle at 50% 38%,
+        color-mix(in srgb, var(--accent-break) 14%, transparent), transparent 70%);
+}
+
+.timer-ring-content {
+    position: relative;
+    z-index: 1;
+    width: 76%;
+    text-align: center;
+}
+
+#countdown-text,
+#descanso-time {
+    font-size: clamp(2.7rem, 13.2vw, 4.05rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.phase-hint {
+    margin: 10px 0 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    min-height: 1em;
+}
+
+/* ── Puntos de ciclo ──────────────────────────────────────────── */
+.cycle-dots {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 2px 0 4px;
+    min-height: 8px;
+}
+
+.cycle-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--progress-bg);
+    border: 1.5px solid color-mix(in srgb, var(--border) 90%, transparent);
+    transition: background 0.3s ease, border-color 0.3s ease,
+                transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cycle-dot.done {
+    background: var(--accent-work);
+    border-color: var(--accent-work);
+}
+
+.cycle-dot.current {
+    background: var(--surface);
+    border-color: var(--accent-work);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-work) 20%, transparent);
+}
+
+/* ── Controles ────────────────────────────────────────────────── */
+.controls {
+    gap: 10px;
+    margin: 16px 0 6px;
+}
+
+.control-btn {
+    min-height: 52px;
+    padding: 12px 18px;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+                filter 0.18s ease, border-color 0.18s ease,
+                background 0.18s ease, color 0.18s ease;
+}
+
+#pause-btn {
+    background: var(--accent-work);
+    color: #fff;
+    border: 1px solid var(--accent-work);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent-work) 26%, transparent);
+}
+
+#pause-btn:hover {
+    filter: brightness(1.07);
+    transform: translateY(-1px);
+}
+
+#pause-btn.paused {
+    background: var(--accent-break);
+    border-color: var(--accent-break);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent-break) 30%, transparent);
+}
+
+#reset-btn {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+#reset-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-work);
+    transform: translateY(-1px);
+}
+
+.control-btn:active { transform: translateY(0) scale(0.99); }
+
+.shortcut-hint {
+    margin: 2px 0 0;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.info-ciclo {
+    margin-top: 14px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.info-ciclo span {
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+/* ── Panel ambiental ──────────────────────────────────────────── */
+.ambient-controls {
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+    box-shadow: 0 6px 20px var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.ambient-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.ambient-head i {
+    color: var(--accent-work-text);
+    font-size: 0.8rem;
+}
+
+.ambient-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ambient-select {
+    min-height: 42px;
+    padding: 10px 36px 10px 14px;
+    font-size: 0.9rem;
+}
+
+.volume-container { gap: 8px; }
+
+.ambient-btn {
+    width: 40px;
+    height: 40px;
+}
+
+.volume-slider {
+    width: 96px;
+    height: 6px;
+    background: linear-gradient(90deg,
+        var(--accent-work) 0 var(--vol, 45%),
+        var(--progress-bg) var(--vol, 45%) 100%);
+}
+
+.volume-slider::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--card);
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--card);
+}
+
+/* ── Banner offline ───────────────────────────────────────────── */
+.offline-banner {
+    border-radius: 18px;
+    box-shadow: 0 6px 18px var(--shadow);
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.footer-nav { margin-top: 8px; }
+.footer-nav nav { gap: 6px; }
+.footer-sep { display: none; }
+
+.footer-btn {
+    padding: 8px 13px;
+    min-height: 38px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: color 0.18s ease, border-color 0.18s ease,
+                transform 0.18s ease, background 0.18s ease;
+}
+
+.footer-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-work);
+    transform: translateY(-1px);
+}
+
+/* ── Contenido SEO ────────────────────────────────────────────── */
+.seo-content {
+    padding: 18px 20px;
+    margin: 28px auto 10px;
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    border-radius: 20px;
+}
+
+.seo-content h2 { font-size: 1rem; }
+
+/* ── Modales ──────────────────────────────────────────────────── */
+.modal {
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.28);
+}
+
+.modal::before {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+.modal h2 { letter-spacing: -0.01em; }
+
+.modal-close {
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* ── Toast ────────────────────────────────────────────────────── */
+#pomo-toast {
+    pointer-events: none;
+    padding: 13px 24px;
+    font-size: 0.9rem;
+    transform: translate(-50%, 14px);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+#pomo-toast.show { transform: translate(-50%, 0); }
+
+/* ── Barra superior ───────────────────────────────────────────── */
+.top-buttons { margin-bottom: 10px; }
+.lang-btn { min-height: 32px; padding: 6px 12px; }
+.theme-toggle { box-shadow: 0 4px 14px var(--shadow); }
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+
+@media (hover: none), (pointer: coarse) {
+    .shortcut-hint { display: none; }
+}
+
+@media (max-width: 560px) {
+    .config-chip {
+        padding: 11px 12px;
+    }
+    .config-chip .time-input {
+        font-size: 1.7rem;
+        width: 54px;
+    }
+    .config-chip .time-btn {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand { margin-bottom: 20px; }
+    .brand-mark {
+        width: 50px;
+        height: 50px;
+        border-radius: 16px;
+        font-size: 1.6rem;
+        margin-bottom: 12px;
+    }
+    .brand h1 { font-size: 1.95rem; }
+
+    .config-row { gap: 8px; }
+    .config-chip {
+        padding: 10px 11px;
+        border-radius: 16px;
+    }
+    .chip-label { font-size: 0.68rem; }
+    .config-chip .time-input { font-size: 1.55rem; width: 50px; }
+    .config-chip .time-btn { width: 26px; height: 26px; font-size: 0.78rem; }
+
+    .config-summary {
+        margin: 14px auto 16px;
+        padding: 8px 14px;
+        font-size: 0.82rem;
+    }
+
+    .presets { margin-bottom: 16px; }
+    .preset-btn { padding: 9px 10px; font-size: 0.8rem; }
+
+    .start-btn {
+        min-height: 58px;
+        font-size: 1.2rem;
+        border-radius: 16px;
+    }
+
+    .countdown {
+        padding: 16px 14px 18px;
+        border-radius: 24px;
+    }
+    .timer-ring { width: min(74vw, 264px); }
+    #countdown-text,
+    #descanso-time { font-size: clamp(2.5rem, 15vw, 3.6rem); }
+    .phase-hint { font-size: 0.62rem; }
+
+    .controls { margin-top: 12px; }
+    .control-btn {
+        padding: 11px 14px;
+        font-size: 0.95rem;
+        border-radius: 14px;
+    }
+    .info-ciclo { margin-top: 12px; font-size: 0.76rem; }
+
+    .ambient-controls { padding: 12px 13px; border-radius: 16px; }
+    .ambient-row { flex-wrap: wrap; }
+    .ambient-select { flex: 1 1 100%; }
+    .volume-container { width: 100%; }
+    .volume-slider { flex: 1; width: auto; }
+
+    .footer-btn {
+        font-size: 0.76rem;
+        padding: 7px 11px;
+        min-height: 36px;
+    }
+
+    .seo-content {
+        padding: 16px;
+        border-radius: 16px;
+    }
+}
+
+@media (min-width: 768px) {
+    main { max-width: 580px; }
+    .countdown { padding: 24px 30px 26px; }
+    .timer-ring { width: 300px; }
+    .control-btn { font-size: 1.05rem; }
+    .footer-btn { font-size: 0.84rem; }
+    .modal::before { display: none; }
+}
+
+@media (max-height: 540px) and (orientation: landscape) {
+    .brand { margin-bottom: 12px; }
+    .brand-mark { display: none; }
+    .brand h1 { font-size: 1.5rem; }
+    .config-subtitle { font-size: 0.85rem; }
+
+    .countdown {
+        padding: 12px 16px 14px;
+        border-radius: 20px;
+    }
+    .countdown-head { margin-bottom: 0; }
+    .estado { padding: 5px 14px; font-size: 0.66rem; }
+    .countdown-icon-btn { width: 32px; height: 32px; }
+
+    .timer-ring {
+        width: 168px;
+        margin: 0 auto 6px;
+    }
+    #countdown-text,
+    #descanso-time { font-size: 2.1rem; }
+    .phase-hint { margin-top: 4px; font-size: 0.58rem; }
+
+    .cycle-dots,
+    .shortcut-hint { display: none; }
+
+    .controls { margin: 10px 0 4px; }
+    .control-btn {
+        min-height: 42px;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+    }
+    .info-ciclo { margin-top: 8px; }
+
+    .ambient-controls {
+        margin-top: 10px;
+        padding: 10px 14px;
+    }
+}
+
+/* ================================================================
+   TEMA OSCURO CÁLIDO
+   Conserva los acentos existentes (el sonido ambiental los redefine
+   al final del archivo).
+   ================================================================ */
+@media (prefers-color-scheme: dark) {
+    body:not(.light),
+    html:not(.light) {
+        --bg:            #17110e;
+        --surface:       #221a16;
+        --card:          #2a201b;
+        --border:        #4a3a32;
+        --progress-bg:   #1f1815;
+        --text-primary:  #F5EDE3;
+        --text-secondary:#c2ac99;
+        --shadow:        rgba(0, 0, 0, 0.55);
+        --card-bg:       #2a201b;
+        --border-color:  #4a3a32;
+    }
+}
+
+body.dark,
+html.dark {
+    --bg:            #17110e;
+    --surface:       #221a16;
+    --card:          #2a201b;
+    --border:        #4a3a32;
+    --progress-bg:   #1f1815;
+    --text-primary:  #F5EDE3;
+    --text-secondary:#c2ac99;
+    --shadow:        rgba(0, 0, 0, 0.55);
+    --card-bg:       #2a201b;
+    --border-color:  #4a3a32;
+}
+
+/* Acento del sonido ambiental: refuerzo para que también gane en el
+   tema oscuro del sistema (body:not(.light) tiene más especificidad). */
+body.amb-rain,
+html:not(.light) body.amb-rain { --accent-work: #2a6fa5; }
+
+body.amb-pink,
+html:not(.light) body.amb-pink { --accent-work: #a82f5c; }
+
+body.amb-white,
+html:not(.light) body.amb-white { --accent-work: #6f6f6f; }
+
+body.amb-forest,
+html:not(.light) body.amb-forest { --accent-work: #3a6e39; }
+
+body.amb-ocean,
+html:not(.light) body.amb-ocean { --accent-work: #235789; }
+
+/* ── Movimiento reducido ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .countdown { animation: none; }
+    .timer-ring-progress { transition: none; }
+}

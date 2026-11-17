@@ -134,5 +134,11 @@
   "ariaPause": "Pausar temporizador",
   "ariaResume": "Reanudar temporizador",
   "ariaReset": "Reiniciar sesión",
-  "ariaClose": "Cerrar"
+  "ariaBackToSettings": "Volver a ajustes",
+  "ariaClose": "Cerrar",
+
+  "hintNextBreak": "Descanso",
+  "hintNextWork": "Vuelta al trabajo",
+  "hintLastCycle": "Último ciclo",
+  "shortcutHint": "Espacio para pausar · Esc para cerrar"
 }

@@ -134,5 +134,11 @@
   "ariaPause": "Pause timer",
   "ariaResume": "Resume timer",
   "ariaReset": "Restart session",
-  "ariaClose": "Close"
+  "ariaBackToSettings": "Back to settings",
+  "ariaClose": "Close",
+
+  "hintNextBreak": "Break",
+  "hintNextWork": "Back to work",
+  "hintLastCycle": "Last cycle",
+  "shortcutHint": "Space to pause · Esc to close"
 }

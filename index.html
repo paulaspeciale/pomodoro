@@ -38,8 +38,8 @@
 
     <!-- ══ PWA ══ -->
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#d32f2f" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#1a0e10" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f5ede0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#17110e" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Pomodoro">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -180,8 +180,11 @@
         </div>
 
         <div id="ciclos-container">
-            <h1 data-i18n="appTitle">Pomodoro Timer</h1>
-            <p class="config-subtitle" data-i18n="configSubtitle">Configura tu sesión de trabajo</p>
+            <header class="brand">
+                <span class="brand-mark" aria-hidden="true">🍅</span>
+                <h1 data-i18n="appTitle">Pomodoro Timer</h1>
+                <p class="config-subtitle" data-i18n="configSubtitle">Configura tu sesión de trabajo</p>
+            </header>
 
             <!-- Fila única con los 3 campos -->
             <div class="config-row">
@@ -248,11 +251,13 @@
             <p class="config-summary" id="config-summary">Total estimado: <strong>3h 50 min</strong></p>
 
             <!-- Presets -->
-            <div class="presets-row">
-                <span class="presets-label" data-i18n="presetsLabel">Presets:</span>
-                <button class="preset-btn" data-work="25" data-break="5"  data-cycles="4" data-i18n="presetClassic" aria-pressed="false">Clásico</button>
-                <button class="preset-btn" data-work="50" data-break="10" data-cycles="4" data-i18n="preset5010" aria-pressed="false">50/10</button>
-                <button class="preset-btn" data-work="90" data-break="20" data-cycles="3" data-i18n="presetDeepWork" aria-pressed="false">Deep Work 90/20</button>
+            <div class="presets">
+                <span class="presets-label" id="presets-label" data-i18n="presetsLabel">Presets:</span>
+                <div class="presets-row" role="group" aria-labelledby="presets-label">
+                    <button class="preset-btn" data-work="25" data-break="5"  data-cycles="4" data-i18n="presetClassic" aria-pressed="false">Clásico</button>
+                    <button class="preset-btn" data-work="50" data-break="10" data-cycles="4" data-i18n="preset5010" aria-pressed="false">50/10</button>
+                    <button class="preset-btn" data-work="90" data-break="20" data-cycles="3" data-i18n="presetDeepWork" aria-pressed="false">Deep Work 90/20</button>
+                </div>
             </div>
 
             <button id="start-btn" class="start-btn">
@@ -261,25 +266,92 @@
             </button>
         </div>
 
+        <!-- ══════════ TEMPORIZADOR ══════════ -->
+        <div id="countdown" class="countdown hidden" role="region" aria-label="Temporizador activo">
+            <div class="countdown-head">
+                <!-- Badge de modo — visible tanto en trabajo como en descanso -->
+                <div class="estado mode-work" aria-live="off">
+                    <span id="modo-actual">TRABAJO</span>
+                </div>
+                <button id="settings-btn" class="countdown-icon-btn" type="button"
+                        data-i18n-aria="ariaBackToSettings" data-i18n-title="ariaBackToSettings"
+                        aria-label="Volver a ajustes" title="Volver a ajustes">
+                    <i class="fas fa-gear" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <!-- Anillo de progreso + tiempo restante -->
+            <div id="timer-ring" class="timer-ring">
+                <svg class="timer-ring-svg" viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+                    <circle class="timer-ring-track" cx="110" cy="110" r="100"></circle>
+                    <circle id="ring-progress" class="timer-ring-progress" cx="110" cy="110" r="100"
+                            pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="timer-ring-content">
+                    <!-- Trabajo -->
+                    <div id="trabajo-container">
+                        <div id="countdown-text" role="timer" aria-live="off" aria-label="Tiempo de trabajo restante">50:00</div>
+                    </div>
+
+                    <!-- Descanso -->
+                    <div id="descanso-container" class="hidden">
+                        <div id="descanso-time" role="timer" aria-live="off" aria-label="Tiempo de descanso restante">10:00</div>
+                        <small id="descanso-label" class="sr-only">10 minutos de descanso</small>
+                    </div>
+
+                    <p id="phase-hint" class="phase-hint" aria-hidden="true"></p>
+                </div>
+            </div>
+
+            <!-- Barra de progreso accesible (visualmente sustituida por el anillo) -->
+            <div class="progress-container sr-only">
+                <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del ciclo actual"></div>
+            </div>
+
+            <!-- Indicador visual de ciclos -->
+            <div id="cycle-dots" class="cycle-dots" aria-hidden="true"></div>
+
+            <div class="controls">
+                <button id="pause-btn" class="control-btn" data-i18n-aria="ariaPause" aria-label="Pausar temporizador">
+                    <i class="fas fa-pause" aria-hidden="true"></i>
+                    <span data-i18n="btnPause">Pausar</span>
+                </button>
+                <button id="reset-btn" class="control-btn reset" data-i18n-aria="ariaReset" aria-label="Reiniciar sesión">
+                    <i class="fas fa-redo" aria-hidden="true"></i> <span data-i18n="btnReset">Reiniciar</span>
+                </button>
+            </div>
+
+            <p class="shortcut-hint" data-i18n="shortcutHint">Espacio para pausar · Esc para cerrar</p>
+
+            <div class="info-ciclo" aria-live="polite" aria-atomic="true">
+                Ciclo <span id="ciclo-actual">1</span> / <span id="ciclo-total">4</span>
+            </div>
+        </div>
+
         <!-- Sonido Ambiental - siempre visible -->
-<div id="ambient-panel" class="ambient-controls" role="group" aria-labelledby="ambient-panel-label">
-    <span id="ambient-panel-label" class="sr-only">Sonido ambiental</span>
-    <select id="ambient-select" class="ambient-select" data-i18n-aria="ambientLabel" aria-label="Sonido ambiental">
-        <option value="none">🎵 Sin ambiental</option>
-        <option value="rain">🌧️ Lluvia</option>
-        <option value="pink">🌸 Ruido Rosa</option>
-        <option value="white">⚪ Ruido Blanco</option>
-        <option value="forest">🌲 Bosque</option>
-        <option value="ocean">🌊 Océano</option>
-    </select>
-    
-    <div class="volume-container">
-        <button id="ambient-toggle" class="ambient-btn" aria-label="Activar/Desactivar sonido">
-            <i class="fas fa-volume-mute" aria-hidden="true"></i>
-        </button>
-        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45" data-i18n-aria="ambientVolumeLabel" aria-label="Volumen del sonido ambiental">
-    </div>
-</div>
+        <div id="ambient-panel" class="ambient-controls" role="group" aria-labelledby="ambient-panel-label">
+            <span id="ambient-panel-label" class="sr-only">Sonido ambiental</span>
+            <div class="ambient-head" aria-hidden="true">
+                <i class="fas fa-headphones"></i>
+                <span data-i18n="ambientLabel">Sonido ambiental</span>
+            </div>
+            <div class="ambient-row">
+                <select id="ambient-select" class="ambient-select" data-i18n-aria="ambientLabel" aria-label="Sonido ambiental">
+                    <option value="none">🎵 Sin ambiental</option>
+                    <option value="rain">🌧️ Lluvia</option>
+                    <option value="pink">🌸 Ruido Rosa</option>
+                    <option value="white">⚪ Ruido Blanco</option>
+                    <option value="forest">🌲 Bosque</option>
+                    <option value="ocean">🌊 Océano</option>
+                </select>
+                <div class="volume-container">
+                    <button id="ambient-toggle" class="ambient-btn" aria-label="Activar/Desactivar sonido">
+                        <i class="fas fa-volume-mute" aria-hidden="true"></i>
+                    </button>
+                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.45" data-i18n-aria="ambientVolumeLabel" aria-label="Volumen del sonido ambiental">
+                </div>
+            </div>
+        </div>
 
         <!-- Banner descarga offline -->
         <div id="offline-sound-banner" class="offline-banner hidden" role="status" aria-live="polite" aria-label="Disponibilidad offline del sonido actual">
@@ -296,42 +368,6 @@
                 <button id="offline-dismiss-btn" class="offline-btn dismiss" aria-label="Cerrar aviso">
                     <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
-            </div>
-        </div>
-
-        <div id="countdown" class="countdown" role="region" aria-label="Temporizador activo">
-            <!-- Badge de modo — visible tanto en trabajo como en descanso -->
-            <div class="estado mode-work" aria-live="off">
-                <span id="modo-actual">TRABAJO</span>
-            </div>
-
-            <!-- Trabajo -->
-            <div id="trabajo-container">
-                <div id="countdown-text" role="timer" aria-live="off" aria-label="Tiempo de trabajo restante">50:00</div>
-            </div>
-
-            <!-- Descanso -->
-            <div id="descanso-container" class="hidden">
-                <div id="descanso-time" role="timer" aria-live="off" aria-label="Tiempo de descanso restante">10:00</div>
-                <small id="descanso-label">10 minutos de descanso</small>
-            </div>
-
-            <div class="progress-container">
-                <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del ciclo actual"></div>
-            </div>
-
-            <div class="controls">
-                <button id="pause-btn" class="control-btn" data-i18n-aria="ariaPause" aria-label="Pausar temporizador">
-                    <i class="fas fa-pause" aria-hidden="true"></i>
-                    <span data-i18n="btnPause">Pausar</span>
-                </button>
-                <button id="reset-btn" class="control-btn reset" data-i18n-aria="ariaReset" aria-label="Reiniciar sesión">
-                    <i class="fas fa-redo" aria-hidden="true"></i> <span data-i18n="btnReset">Reiniciar</span>
-                </button>
-            </div>
-
-            <div class="info-ciclo" aria-live="polite" aria-atomic="true">
-                Ciclo <span id="ciclo-actual">1</span> / <span id="ciclo-total">4</span>
             </div>
         </div>
     </main>

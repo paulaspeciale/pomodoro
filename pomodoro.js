@@ -8,6 +8,8 @@
 let ciclosContainer, countdownDiv, trabajoContainer, descansoContainer;
 let timerDisplay, descansoTime, modoActual, progressBar;
 let pauseBtn, resetBtn, cicloActualEl, cicloTotalEl, themeToggle;
+// Chrome del temporizador (anillo, puntos de ciclo, hint de fase y ajustes)
+let ringProgress, phaseHint, cycleDotsEl, timerRing, settingsBtn;
 
 // ==================== ESTADO GLOBAL ====================
 let tiempoActual = 0, tiempoInicial = 0, isDescanso = false;
@@ -89,6 +91,14 @@ function syncAmbientUI() {
     slider.style.opacity = currentAmbient ? '1' : '0.4';
 }
 
+function syncVolumeUI() {
+    const slider = document.getElementById('volume-slider');
+    if (!slider) return;
+    const pct = Math.round((parseFloat(slider.value) || 0) * 100);
+    slider.style.setProperty('--vol', `${pct}%`);
+    slider.setAttribute('aria-valuetext', `${pct}%`);
+}
+
 function initAmbientControls() {
     const select = document.getElementById('ambient-select');
     const slider = document.getElementById('volume-slider');
@@ -101,16 +111,16 @@ function initAmbientControls() {
             slider.value  = currentVolume;
         }
     } catch (_) {}
-    // Inicializar aria-valuetext del slider con el porcentaje legible
-    slider.setAttribute('aria-valuetext', `${Math.round(currentVolume * 100)}%`);
+    // Inicializar pista rellena y aria-valuetext del slider
+    syncVolumeUI();
 
     select.addEventListener('change', (e) => playAmbient(e.target.value));
     document.getElementById('ambient-toggle').addEventListener('click', toggleAmbientSound);
 
     slider.addEventListener('input', (e) => {
         currentVolume = parseFloat(e.target.value);
-        // Actualizar texto legible del valor del slider para lectores de pantalla
-        slider.setAttribute('aria-valuetext', `${Math.round(currentVolume * 100)}%`);
+        // Actualizar pista rellena y texto legible para lectores de pantalla
+        syncVolumeUI();
         try { localStorage.setItem('ambientVolume', currentVolume); } catch (_) {}
         if (ambientSound) {
             ambientSound.volume(currentVolume);
@@ -1859,6 +1869,66 @@ function snapProgressBar(pct) {
     progressBar.style.transition = '';
 }
 
+// ── ANILLO DE PROGRESO ─────────────────────────────────────────────
+// El SVG usa pathLength="100": dasharray y dashoffset se expresan en
+// porcentaje, así el anillo siempre coincide con la barra accesible.
+function updateRing(pct, immediate) {
+    if (!ringProgress) return;
+    const safePct = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 100;
+    const offset = 100 - safePct;
+    if (immediate) {
+        ringProgress.style.transition = 'none';
+        ringProgress.style.strokeDashoffset = String(offset);
+        void ringProgress.getBoundingClientRect();
+        ringProgress.style.transition = '';
+    } else {
+        ringProgress.style.strokeDashoffset = String(offset);
+    }
+}
+
+// ── PUNTOS DE CICLO ────────────────────────────────────────────────
+// Reflejan visualmente el avance de la sesión (ciclos hechos / actual / pendientes).
+let _cycleDotsSignature = '';
+function renderCycleDots() {
+    if (!cycleDotsEl) return;
+    const total = Math.max(1, ciclosTotales || 1);
+    const isBreakPhase = isDescanso;
+    const activeIndex = isBreakPhase ? -1 : Math.max(0, cicloActual - 1);
+    const completed   = isBreakPhase ? cicloActual : Math.max(0, cicloActual - 1);
+    const signature   = `${total}|${activeIndex}|${completed}`;
+    if (signature === _cycleDotsSignature) return;
+    _cycleDotsSignature = signature;
+
+    cycleDotsEl.textContent = '';
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < total; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'cycle-dot';
+        if (i < completed)    dot.classList.add('done');
+        if (i === activeIndex) dot.classList.add('current');
+        frag.appendChild(dot);
+    }
+    cycleDotsEl.appendChild(frag);
+}
+
+// ── HINT DE SIGUIENTE FASE ─────────────────────────────────────────
+// Da contexto sin competir con el tiempo: "Descanso · 10 min", etc.
+function updatePhaseHint() {
+    if (!phaseHint) return;
+    const _t = window.i18n?.t ?? (k => k);
+    let text = '';
+    if (!sessionFinished) {
+        if (isDescanso) {
+            text = `${_t('hintNextWork')} · ${workMinutes} ${_t('unitMin')}`;
+        } else if (cicloActual >= ciclosTotales) {
+            text = _t('hintLastCycle');
+        } else {
+            text = `${_t('hintNextBreak')} · ${breakMinutes} ${_t('unitMin')}`;
+        }
+    }
+    if (phaseHint.textContent !== text) phaseHint.textContent = text;
+}
+
 function actualizarPantalla() {
     const display = isDescanso ? descansoTime : timerDisplay;
     display.textContent = formatTime(tiempoActual);
@@ -1867,12 +1937,14 @@ function actualizarPantalla() {
     cicloTotalEl.textContent  = ciclosTotales;
 
     const porcentaje = Math.max(0, (tiempoActual / tiempoInicial) * 100);
-    if (_suppressProgressTransition) {
+    const immediateProgress = _suppressProgressTransition;
+    if (immediateProgress) {
         _suppressProgressTransition = false;
         snapProgressBar(porcentaje);
     } else {
         progressBar.style.width = `${porcentaje}%`;
     }
+    updateRing(porcentaje, immediateProgress);
     const _ta = window.i18n?.t ?? (k => k);
     const porcentajeCompletado = Math.round(100 - porcentaje);
     progressBar.setAttribute('aria-valuenow', porcentajeCompletado);
@@ -1900,6 +1972,8 @@ function actualizarPantalla() {
         modoActual.parentElement.classList.add('mode-work');
     }
 
+    renderCycleDots();
+    updatePhaseHint();
     _updateDocumentTitle();
 }
 
@@ -1992,6 +2066,9 @@ function resetSessionState() {
         _resetClickOutsideHandler = null;
     }
 
+    // Limpiar estado de confirmación del botón ajustes si estaba pendiente
+    _cancelSettingsConfirm();
+
     const finEl = document.getElementById('fin-sesion');
     if (finEl) finEl.remove();
     _finScreenRendered = false;
@@ -2018,6 +2095,11 @@ function resetSessionState() {
     if (progressContainer) progressContainer.classList.remove('hidden');
     if (controls) controls.classList.remove('hidden');
     if (infoCiclo) infoCiclo.classList.remove('hidden');
+    if (timerRing) timerRing.classList.remove('hidden');
+    if (cycleDotsEl) cycleDotsEl.classList.remove('hidden');
+    if (settingsBtn) settingsBtn.classList.remove('hidden');
+    const shortcutHint = countdownDiv.querySelector('.shortcut-hint');
+    if (shortcutHint) shortcutHint.classList.remove('hidden');
 
     const _t = window.i18n?.t ?? (k => k);
     pauseBtn.disabled = false;
@@ -2040,6 +2122,10 @@ function resetSessionState() {
     progressBar.style.width = '100%';
     progressBar.setAttribute('aria-valuenow', '0');
     progressBar.setAttribute('aria-valuetext', '0%');
+    updateRing(100, true);
+    _cycleDotsSignature = '';
+    renderCycleDots();
+    updatePhaseHint();
     updateSummary();
     _updateDocumentTitle();
 }
@@ -2085,6 +2171,11 @@ function _restartFromBeginning() {
     if (progressContainer) progressContainer.classList.remove('hidden');
     if (controls)          controls.classList.remove('hidden');
     if (infoCiclo)         infoCiclo.classList.remove('hidden');
+    if (timerRing)         timerRing.classList.remove('hidden');
+    if (cycleDotsEl)       cycleDotsEl.classList.remove('hidden');
+    if (settingsBtn)       settingsBtn.classList.remove('hidden');
+    const shortcutHint = countdownDiv.querySelector('.shortcut-hint');
+    if (shortcutHint)      shortcutHint.classList.remove('hidden');
 
     // Restaurar botones (pueden estar ocultos/deshabilitados si la sesión había finalizado)
     const _t = window.i18n?.t ?? (k => k);
@@ -2092,6 +2183,7 @@ function _restartFromBeginning() {
     resetBtn.style.display = '';
     resetBtn.innerHTML = `<i class="fas fa-redo"></i> <span>${_t('btnReset')}</span>`;
     document.body.classList.remove('timer-paused');
+    _cycleDotsSignature = '';
 
     const descansoLabel = document.getElementById('descanso-label');
     if (descansoLabel) descansoLabel.textContent = `${breakMinutes} ${_t('breakMinutesLabel')}`;
@@ -2121,6 +2213,9 @@ function finalizarTodo() {
         document.removeEventListener('click', _resetClickOutsideHandler);
         _resetClickOutsideHandler = null;
     }
+
+    // Cancelar también una confirmación de "volver a ajustes" pendiente
+    _cancelSettingsConfirm();
 
     pauseBtn.disabled = true;
     pauseBtn.setAttribute('aria-disabled', 'true');
@@ -2224,6 +2319,13 @@ function mostrarPantallaFin() {
     if (progressContainer) progressContainer.classList.add('hidden');
     if (controls)          controls.classList.add('hidden');
     if (infoCiclo)         infoCiclo.classList.add('hidden');
+    // El anillo y los puntos de ciclo no aportan nada con la sesión terminada
+    if (timerRing)    timerRing.classList.add('hidden');
+    if (cycleDotsEl)  cycleDotsEl.classList.add('hidden');
+    if (settingsBtn)  settingsBtn.classList.add('hidden');
+    if (phaseHint)    phaseHint.textContent = '';
+    const shortcutHint = countdownDiv.querySelector('.shortcut-hint');
+    if (shortcutHint) shortcutHint.classList.add('hidden');
 
     // Mover el foco a la acción principal para que el teclado/lector de pantalla
     // no quede en un botón que acaba de ocultarse.
@@ -2271,6 +2373,13 @@ function _syncDynamicI18n() {
     // Resumen de configuración
     updateSummary();
 
+    // Hint de la siguiente fase y botón de ajustes
+    updatePhaseHint();
+    if (settingsBtn && !_settingsConfirming) {
+        settingsBtn.setAttribute('aria-label', t('ariaBackToSettings'));
+        settingsBtn.title = t('ariaBackToSettings');
+    }
+
     // Aria-label del botón de tema — depende de si el tema efectivo es oscuro
     if (themeToggle) {
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -2287,6 +2396,25 @@ function _syncDynamicI18n() {
 let _resetClickOutsideHandler = null;
 let _resetConfirming = false;
 let _resetCancelTimeout = null;
+
+// Confirmación inline del botón "volver a ajustes" durante una sesión.
+let _settingsConfirming = false;
+let _settingsConfirmTimeout = null;
+
+function _cancelSettingsConfirm() {
+    if (_settingsConfirmTimeout) {
+        clearTimeout(_settingsConfirmTimeout);
+        _settingsConfirmTimeout = null;
+    }
+    _settingsConfirming = false;
+    if (!settingsBtn) return;
+    settingsBtn.classList.remove('confirming');
+    const _t = window.i18n?.t ?? (k => k);
+    const label = _t('ariaBackToSettings');
+    settingsBtn.innerHTML = '<i class="fas fa-gear" aria-hidden="true"></i>';
+    settingsBtn.setAttribute('aria-label', label);
+    settingsBtn.title = label;
+}
 
 
 // Aviso al cerrar/recargar con una sesión en curso. El navegador muestra su
@@ -2326,6 +2454,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     cicloActualEl     = document.getElementById('ciclo-actual');
     cicloTotalEl      = document.getElementById('ciclo-total');
     themeToggle       = document.getElementById('theme-toggle');
+    ringProgress      = document.getElementById('ring-progress');
+    phaseHint         = document.getElementById('phase-hint');
+    cycleDotsEl       = document.getElementById('cycle-dots');
+    timerRing         = document.getElementById('timer-ring');
+    settingsBtn       = document.getElementById('settings-btn');
 
     initTheme();
     initAmbientControls();
@@ -2350,6 +2483,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('visibilitychange', handleTimerVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
     pauseBtn.addEventListener('click', togglePause);
+
+    // Volver a ajustes durante una sesión: doble toque para confirmar y así
+    // no perder el progreso por un clic accidental.
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            if (sessionFinished || countdownDiv.classList.contains('hidden')) return;
+            if (_settingsConfirming) {
+                _cancelSettingsConfirm();
+                resetSessionState();
+                return;
+            }
+            const _t = window.i18n?.t ?? (k => k);
+            _settingsConfirming = true;
+            settingsBtn.classList.add('confirming');
+            settingsBtn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i>';
+            settingsBtn.setAttribute('aria-label', _t('btnConfirm'));
+            settingsBtn.title = _t('btnConfirm');
+            _settingsConfirmTimeout = setTimeout(_cancelSettingsConfirm, 3500);
+        });
+    }
 
     resetBtn.addEventListener('click', (evt) => {
         // Evitar confirm() bloqueante: mostrar confirmacion inline en el propio boton
