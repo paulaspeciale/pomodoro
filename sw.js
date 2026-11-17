@@ -16,7 +16,7 @@ if (!_vParam) {
         '[SW] Registrado sin ?v= explícito. Usando fecha UTC como versión de emergencia:',
         CACHE_VERSION,
         '— Para builds en producción, inyecta el hash del build en el registro del SW ' +
-        '(ver index.html: navigator.serviceWorker.register(`./sw.js?v=${swVersion}`))'
+        '(ver sw-register.js: navigator.serviceWorker.register(`./sw.js?v=${swVersion}`))'
     );
     // El mensaje SW_FALLBACK_ACTIVE se envía desde el evento activate (tras clients.claim())
     // para garantizar que el SW ya controla los clientes en el momento del postMessage.
@@ -24,8 +24,7 @@ if (!_vParam) {
 
 const SHELL_CACHE   = `pomodoro-shell-${CACHE_VERSION}`;
 const SOUNDS_CACHE  = 'pomodoro-sounds-v1';
-const CDN_CACHE     = 'pomodoro-cdn-libs-v1';
-const ASSETS_CACHE  = 'pomodoro-assets-v1';
+const CDN_CACHE     = 'pomodoro-cdn-libs-v2';
 const PAGES_CACHE   = 'pomodoro-pages-v1';
 const STATIC_CACHE  = 'pomodoro-static-v1';
 
@@ -40,18 +39,35 @@ const APP_SHELL_ASSETS = [
     './locales/en.json',
     './locales/pt.json',
     './sw-register.js',
+    './theme-init.js',
     './manifest.json',
     './img/icons/favicon.svg',
     './img/icons/icon-pomodoro.svg',
-    './img/icons/apple-touch-icon.png'
+    './img/icons/apple-touch-icon.png',
+    './img/icons/icon-192.png',
+    './img/icons/icon-512.png',
+    './img/icons/icon-maskable-512.png'
+];
+
+// Librerías externas imprescindibles para el uso offline desde la primera
+// instalación. El precache del shell solo descubre assets del mismo origen,
+// así que estas URLs se cachean explícitamente en CDN_CACHE.
+const CDN_PRECACHE = [
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2',
+    'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js'
 ];
 
 // ==================== INSTALL ====================
 self.addEventListener('install', event => {
     self.skipWaiting();
     event.waitUntil(
-        cacheDiscoveredShellAssets(SHELL_CACHE)
-            .catch(err => console.error('[SW] No se pudo preparar el cache offline:', err))
+        Promise.allSettled([
+            cacheDiscoveredShellAssets(SHELL_CACHE),
+            precacheCdnLibs()
+        ])
     );
 });
 
@@ -61,7 +77,6 @@ self.addEventListener('activate', event => {
         SHELL_CACHE,
         SOUNDS_CACHE,
         CDN_CACHE,
-        ASSETS_CACHE,
         PAGES_CACHE,
         STATIC_CACHE
     ];
@@ -99,14 +114,22 @@ self.addEventListener('fetch', event => {
 
     const url = new URL(request.url);
 
+    // Petición de versión del registro (sw-register.js): siempre red, nunca caché.
+    // Evita llenar SHELL_CACHE con una URL distinta en cada carga.
+    if (url.searchParams.has('_swv')) {
+        event.respondWith(fetch(request).catch(() => Response.error()));
+        return;
+    }
+
     // Navegación → NetworkFirst con fallback a index.html
     if (request.mode === 'navigate') {
         event.respondWith(networkFirst(request, PAGES_CACHE, './index.html'));
         return;
     }
 
-    // Sonidos → CacheFirst (grandes, cambian poco)
-    if (url.origin === self.location.origin && url.pathname.includes('/img/sounds/')) {
+    // Sonidos → CacheFirst (grandes, cambian poco). La ruta real es /sounds/,
+    // no /img/sounds/ (bug histórico que dejaba el audio en SHELL_CACHE).
+    if (url.origin === self.location.origin && /(^|\/)sounds\//.test(url.pathname)) {
         event.respondWith(cacheFirst(request, SOUNDS_CACHE));
         return;
     }
@@ -124,8 +147,6 @@ self.addEventListener('fetch', event => {
     // Scripts y estilos propios → StaleWhileRevalidate con SHELL_CACHE.
     // Los assets propios se pre-cachean en SHELL_CACHE durante install, por lo que
     // staleWhileRevalidate los sirve instantáneamente offline desde ese caché.
-    // NetworkFirst con ASSETS_CACHE era incorrecto: fallaba offline porque ASSETS_CACHE
-    // empieza vacío y los scripts están en SHELL_CACHE, no en ASSETS_CACHE.
     if (request.destination === 'script' || request.destination === 'style') {
         event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
         return;
@@ -162,9 +183,15 @@ self.addEventListener('notificationclick', event => {
 
 async function networkFirst(request, cacheName, fallbackUrl) {
     const cache = await caches.open(cacheName);
+    // Timeout de red: una conexión colgada no debe bloquear la navegación
+    // indefinidamente; si expira, se sirve la copia cacheada.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
     try {
-        const response = await fetch(request);
-        if (response.ok) cache.put(request, response.clone());
+        const response = await fetch(request, { signal: controller.signal });
+        if (response.status === 200) {
+            cache.put(request, response.clone()).catch(() => {});
+        }
         return response;
     } catch (_) {
         // 1. Match exacto
@@ -178,6 +205,7 @@ async function networkFirst(request, cacheName, fallbackUrl) {
         // 3. Fallback a index.html (para navegación SPA offline)
         if (fallbackUrl) {
             const base = self.location.href.replace(/\/[^/]*$/, '/');
+            const shellCache = await caches.open(SHELL_CACHE);
             // Intentar todas las variantes de la URL de fallback que pueden
             // haber sido usadas como clave durante el precache.
             const fallbackVariants = [
@@ -186,21 +214,29 @@ async function networkFirst(request, cacheName, fallbackUrl) {
                 new URL(fallbackUrl, base).href.replace(/index\.html$/, ''), // sin filename
             ];
             for (const variant of fallbackVariants) {
-                const fallback = await cache.match(variant);
+                const fallback = (await cache.match(variant)) || (await shellCache.match(variant));
                 if (fallback) return fallback;
             }
         }
         return Response.error();
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
 
 async function cacheFirst(request, cacheName) {
     const cache = await caches.open(cacheName);
+    // Cache.match ignora los headers de la petición (incluido Range), así que un
+    // audio completo cacheado también sirve peticiones parciales del elemento <audio>.
     const cached = await cache.match(request);
     if (cached) return cached;
+    // No cachear respuestas 206 Partial Content: guardarían fragmentos incompletos.
+    const isRangeRequest = request.headers.has('range');
     try {
         const response = await fetch(request);
-        if (response.ok) cache.put(request, response.clone());
+        if (!isRangeRequest && response.status === 200) {
+            cache.put(request, response.clone()).catch(() => {});
+        }
         return response;
     } catch (_) {
         return Response.error();
@@ -212,7 +248,11 @@ async function staleWhileRevalidate(request, cacheName) {
     const cached = await cache.match(request);
     const fetchPromise = fetch(request)
         .then(response => {
-            if (response.ok) cache.put(request, response.clone());
+            // Cachear respuestas válidas y también opacas (no-cors): si una CDN
+            // no envía cabeceras CORS, `ok` es false pero la respuesta sirve offline.
+            if (response && (response.ok || response.type === 'opaque')) {
+                cache.put(request, response.clone()).catch(() => {});
+            }
             return response;
         })
         .catch(() => null);
@@ -220,6 +260,27 @@ async function staleWhileRevalidate(request, cacheName) {
 }
 
 // ==================== PRECACHE AL INSTALAR ====================
+
+async function precacheCdnLibs() {
+    const cache = await caches.open(CDN_CACHE);
+    const results = await Promise.allSettled(
+        CDN_PRECACHE.map(async url => {
+            if (await cache.match(url)) return;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            try {
+                const response = await fetch(url, { cache: 'no-store', mode: 'cors', signal: controller.signal });
+                if (!response.ok) throw new Error(`${url} respondió ${response.status}`);
+                await cache.put(url, response);
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        })
+    );
+    results
+        .filter(r => r.status === 'rejected')
+        .forEach(r => console.warn('[SW] Librería CDN no cacheada:', r.reason));
+}
 
 async function cacheDiscoveredShellAssets(cacheName) {
     const cache = await caches.open(cacheName);

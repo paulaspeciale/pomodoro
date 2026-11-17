@@ -22,28 +22,50 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./img/icons/apple-touch-icon.png",
-      "sizes": "180x180",
+      "src": "./img/icons/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./img/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./img/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "./img/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     },
     {
       "src": "./img/icons/icon-pomodoro.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./img/screenshots/desktop.png",
+      "sizes": "1440x1004",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Temporizador Pomodoro en marcha, con barra de progreso y controles"
     },
     {
-      "src": "./img/icons/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "./img/screenshots/mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Configuración de trabajo, descanso y número de ciclos en móvil"
     }
   ],
   "shortcuts": [

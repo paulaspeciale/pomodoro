@@ -50,6 +50,7 @@
   "offlineSaveForEnd": "para ouvir sem conexão",
   "offlineSaveSuccess": "disponível offline",
   "offlineSaveError": "Não foi possível salvar. Verifique sua conexão.",
+  "offlineQuotaError": "Não há espaço suficiente no dispositivo para salvar o som.",
   "offlineNoSupport": "Seu navegador não suporta cache offline.",
   "offlineDownloadError": "Erro ao baixar",
 
@@ -78,6 +79,7 @@
   "toastBrowserTip": "ℹ️ Abra esta página no Chrome ou Edge para instalá-la",
   "toastLoadError": "⚠️ Não foi possível carregar o som.",
   "toastSendError": "❌ Não foi possível enviar. Verifique sua conexão e tente novamente.",
+  "toastSendTimeout": "⏱ O envio demorou demais. Tente novamente.",
   "toastMsgRequired": "⚠️ Escreva sua mensagem antes de enviar",
   "toastEmailInvalid": "⚠️ Este email não parece válido",
   "donationCopyBtn": "Copiar",
@@ -109,6 +111,7 @@
   "suggestionSubmitting": "Enviando...",
   "suggestionSuccessTitle": "Mensagem enviada!",
   "suggestionSuccessDesc": "Obrigado pelo seu feedback. Vou ler com atenção.",
+  "suggestionPrivacy": "Seus dados são usados apenas para responder você. Nunca são compartilhados com terceiros.",
 
   "langSelectorLabel": "Idioma",
   "langEs": "Español",

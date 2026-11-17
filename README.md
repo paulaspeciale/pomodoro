@@ -14,6 +14,9 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 - Progreso visual con barra animada y compensación de drift acumulado (corrección por timestamp, no por tick)
 - Pausa/reanudación con confirmación inline en el botón de reinicio (sin `confirm()` bloqueante)
 - Compensación automática del tiempo transcurrido al volver desde segundo plano (`visibilitychange`)
+- Deadline de fondo: la fase termina y notifica aunque la pestaña esté oculta
+- Título de la pestaña con el tiempo restante y aviso al cerrar con sesión activa
+- Configuración de trabajo/descanso/ciclos persistida en `localStorage`
 - Pantalla de fin de sesión con confetti y botón de nueva sesión
 
 ### Sonidos ambientales
@@ -28,7 +31,7 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 - Persistencia de preferencia en `localStorage`
 - Sistema de traducciones propio sin dependencias externas: atributos `data-i18n`, `data-i18n-aria`, `data-i18n-ph` y `data-i18n-title`
 - Cambio de idioma en tiempo real sin recargar la página
-- 117 claves de traducción con paridad entre los tres archivos de locale
+- 120 claves de traducción con paridad entre los tres archivos de locale
 
 ### Tema visual
 - Paleta inspirada en café parisino vintage (rojo vino, crema, oliva, ámbar)
@@ -39,6 +42,7 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 - Instalable como app en Android (Chrome), iOS (Safari) y escritorio (Chrome/Edge)
 - Offline completo desde la primera instalación: shell, scripts, estilos y locales precacheados por el Service Worker
 - Shortcuts del manifest para iniciar directamente con un preset desde el launcher
+- Capturas de pantalla del manifest para la UI de instalación enriquecida de Chrome
 - Versión del Service Worker generada por hash del HTML (sin depender de cabeceras HTTP)
 
 ### Notificaciones y accesibilidad
@@ -51,6 +55,7 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 ### Modales y formulario
 - Modales de: Sobre mí, Sobre la app, Donaciones, Otros proyectos, Sugerencias y Guía offline
 - Formulario de sugerencias enviado vía FormSubmit (AJAX, sin backend propio)
+- Honeypot anti-spam, timeout de envío con `AbortController` y aviso de privacidad
 - Guía offline con tabs por plataforma (Android, iOS, escritorio) con auto-detección del dispositivo
 
 ---
@@ -70,9 +75,10 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 | Service Worker API | Estrategias de caché (shell, sonidos, CDN, páginas), precache en install |
 | Cache API | Caché offline de sonidos ambientales con progreso de descarga |
 | Web Audio API | Sonido de cambio de fase (oscilador, sin archivos de audio) |
-| Notifications API | Notificaciones del sistema al cambiar de fase |
-| Web App Manifest | Instalación PWA, shortcuts, iconos, colores de tema |
-| localStorage | Preferencias de idioma, tema y volumen |
+| Notifications API / Service Worker | Notificaciones del sistema al cambiar de fase (vía `registration.showNotification`)
+| Web App Manifest | Instalación PWA, shortcuts, iconos, capturas y colores de tema |
+| localStorage | Preferencias de idioma, tema, volumen y configuración del temporizador |
+| Storage API | `navigator.storage.persist()` para proteger los sonidos cacheados del desalojo |
 | History API | Limpieza de parámetros de URL tras aplicar presets |
 | Clipboard API | Copia del alias de donación (con fallback `execCommand`) |
 | Page Visibility API | `visibilitychange` para compensar tiempo transcurrido en segundo plano |
@@ -100,6 +106,7 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 ├── pomodoro.js             # Lógica principal: timer, audio, modales, PWA
 ├── pomodoro.css            # Estilos: temas, animaciones, responsive
 ├── i18n.js                 # Sistema de internacionalización
+├── theme-init.js           # Tema antes del primer paint (anti-FOUC)
 ├── sw.js                   # Service Worker: estrategias de caché
 ├── sw-register.js          # Registro del SW (fuera del HTML por CSP)
 ├── manifest.json           # Web App Manifest
@@ -109,17 +116,25 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 │   ├── es.json             # Traducciones en español (base)
 │   ├── en.json             # Traducciones en inglés
 │   └── pt.json             # Traducciones en portugués
+├── sounds/
+│   ├── rain.mp3
+│   ├── pinknoise.mp3
+│   ├── whitenoise.mp3
+│   ├── woods.mp3
+│   └── ocean.mp3
 └── img/
     ├── icons/
     │   ├── favicon.svg
     │   ├── icon-pomodoro.svg
-    │   └── apple-touch-icon.png
-    └── sounds/
-        ├── rain.mp3
-        ├── pinknoise.mp3
-        ├── whitenoise.mp3
-        ├── woods.mp3
-        └── ocean.mp3
+    │   ├── icon-192.png
+    │   ├── icon-512.png
+    │   ├── icon-maskable-512.png
+    │   ├── apple-touch-icon.png
+    │   └── og-image.png
+    ├── screenshots/
+    │   ├── desktop.png
+    │   └── mobile.png
+    └── paypal.jpg
 ```
 
 ---
@@ -127,7 +142,7 @@ Temporizador Pomodoro gratuito, sin anuncios y sin registro. Progressive Web App
 ## Arquitectura
 
 ### Timer
-El timer evita el drift acumulado de `setInterval` anclando un timestamp al inicio de cada fase (`phaseStartTime`) y calculando el tiempo restante como `phaseStartSeconds - elapsed` en cada tick, en lugar de decrementar 1 segundo por intervalo. Al volver desde segundo plano, el tiempo transcurrido se compensa en un solo paso antes de reiniciar el intervalo.
+El timer evita el drift acumulado de `setInterval` anclando un timestamp al inicio de cada fase (`phaseStartTime`) y calculando el tiempo restante como `phaseStartSeconds - elapsed` en cada tick, en lugar de decrementar 1 segundo por intervalo. Al volver desde segundo plano se recalcula desde ese timestamp (no se resta dos veces el tiempo oculto). Además, un `setTimeout` con el deadline exacto de la fase dispara la transición y la notificación aunque la pestaña esté oculta y `setInterval` esté congelado.
 
 ### Service Worker
 Implementa cinco estrategias nativas sin Workbox:

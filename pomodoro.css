@@ -13,6 +13,7 @@
 
 /* ── TEMA CLARO (defecto) ──────────────────────────────────────── */
 :root {
+    color-scheme: light;
     --bg:            #f5ede0;          /* fondo crema suave */
     --surface:       #ede0cc;          /* superficies pergamino */
     --card:          #e8d9c0;          /* tarjetas beige cálido */
@@ -20,6 +21,8 @@
     --text-secondary:#6b4a2a;          /* texto marrón medio — 5.73:1 sobre card, WCAG AA */
     --accent-work:   #A13C38;          /* rojo vino — trabajo */
     --accent-break:  #465123;          /* oliva — descanso */
+    --accent-work-text:  #A13C38;      /* acento para texto sobre superficies claras */
+    --accent-break-text: #465123;      /* oliva para texto sobre superficies claras */
     --border:        #c9b08a;          /* borde dorado tenue */
     --progress-bg:   #d8c9ad;          /* pista de progreso */
     --shadow:        rgba(90,50,20,0.12);
@@ -31,7 +34,9 @@
 /* ── TEMA OSCURO — sistema operativo ─────────────────────────────────
    Se activa cuando el SO prefiere oscuro Y el usuario no forzó claro */
 @media (prefers-color-scheme: dark) {
-    body:not(.light) {
+    body:not(.light),
+    html:not(.light) {
+        color-scheme: dark;
         --bg:            #141414;
         --surface:       #22303C;
         --card:          #2c3d4a;
@@ -39,6 +44,8 @@
         --text-secondary:#a8bcc8;
         --accent-work:   #b05e40;   /* Terra — 4.64:1 blanco/color, WCAG AA texto normal */
         --accent-break:  #6b7a4a;   /* Fennel */
+        --accent-work-text:  #dda184; /* Terra claro — 5.07:1 sobre card oscuro */
+        --accent-break-text: #a8b878; /* Oliva claro — 5.23:1 sobre card oscuro */
         --border:        #3d5060;
         --progress-bg:   #1e2c36;
         --shadow:        rgba(0,0,0,0.55);
@@ -48,7 +55,9 @@
 }
 
 /* ── TEMA OSCURO — forzado manualmente ── */
-body.dark {
+body.dark,
+html.dark {
+    color-scheme: dark;
     --bg:            #141414;
     --surface:       #22303C;
     --card:          #2c3d4a;
@@ -56,6 +65,8 @@ body.dark {
     --text-secondary:#a8bcc8;
     --accent-work:   #b05e40;   /* Terra — 4.64:1 blanco/color, WCAG AA texto normal */
     --accent-break:  #6b7a4a;   /* Fennel */
+    --accent-work-text:  #dda184; /* Terra claro — 5.07:1 sobre card oscuro */
+    --accent-break-text: #a8b878; /* Oliva claro — 5.23:1 sobre card oscuro */
     --border:        #3d5060;
     --progress-bg:   #1e2c36;
     --shadow:        rgba(0,0,0,0.55);
@@ -64,7 +75,9 @@ body.dark {
 }
 
 /* ── TEMA CLARO — forzado manualmente (anula prefers-color-scheme dark) ── */
-body.light {
+body.light,
+html.light {
+    color-scheme: light;
     --bg:            #f5ede0;
     --surface:       #ede0cc;
     --card:          #e8d9c0;
@@ -72,6 +85,8 @@ body.light {
     --text-secondary:#6b4a2a;
     --accent-work:   #A13C38;
     --accent-break:  #465123;
+    --accent-work-text:  #A13C38;
+    --accent-break-text: #465123;
     --border:        #c9b08a;
     --progress-bg:   #d8c9ad;
     --shadow:        rgba(90,50,20,0.12);
@@ -185,7 +200,11 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
-    padding: 16px 12px;
+    /* Safe-area para iOS con notch/home indicator (viewport-fit=cover) */
+    padding: calc(16px + env(safe-area-inset-top, 0px))
+             calc(12px + env(safe-area-inset-right, 0px))
+             calc(16px + env(safe-area-inset-bottom, 0px))
+             calc(12px + env(safe-area-inset-left, 0px));
 }
 
 main { 
@@ -218,7 +237,7 @@ h1 {
     flex: 1;
     background: var(--card);
     border-radius: 16px;
-    padding: 14px 12px 12px;
+    padding: 14px 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -248,7 +267,7 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .chip-val-wrap {
@@ -261,17 +280,19 @@ h1 {
 
 .config-chip .time-input {
     font-size: 1.8rem;
-    width: 64px;
+    width: 56px;
     text-align: center;
 }
 
 .config-chip .time-unit {
     font-size: 0.85rem;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .config-chip .time-btn {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     font-size: 1rem;
     flex-shrink: 0;
 }
@@ -535,7 +556,7 @@ h1 {
     border-radius: 8px;
     padding: 6px 12px;
     font-size: 0.95rem;
-    color: var(--accent-work);
+    color: var(--accent-work-text);
     font-weight: 700;
     letter-spacing: 0.02em;
     font-family: monospace;
@@ -941,7 +962,7 @@ body:not(.light) .ambient-select {
 }
 .ambient-btn:hover {
     border-color: var(--accent-work);
-    color: var(--accent-work);
+    color: var(--accent-work-text);
     background: var(--surface);
 }
 
@@ -1188,7 +1209,7 @@ body.timer-paused #descanso-time {
     overflow-y: auto;
     background: var(--surface);
     border-radius: 28px 28px 0 0;
-    padding: 28px 24px 40px;
+    padding: 28px 24px calc(40px + env(safe-area-inset-bottom, 0px));
     z-index: 1001;
     transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
     -webkit-overflow-scrolling: touch;
@@ -1269,7 +1290,7 @@ body.timer-paused #descanso-time {
     margin-top: 2px;
 }
 .char-count.near-limit { color: #DD9A54; }
-.char-count.at-limit   { color: var(--accent-work); }
+.char-count.at-limit   { color: var(--accent-work-text); }
 
 .suggestion-submit-btn {
     padding: 14px;
@@ -1289,6 +1310,23 @@ body.timer-paused #descanso-time {
 }
 .suggestion-submit-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
 .suggestion-submit-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Honeypot: fuera de pantalla (no display:none, los bots lo ignorarían) */
+.hp-field {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.suggestion-privacy {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: -4px;
+}
 
 /* ── MODAL OFFLINE GUIDE ── */
 .offline-platform-tabs {
@@ -1321,7 +1359,7 @@ body.timer-paused #descanso-time {
 }
 .ofl-tab:hover { color: var(--text-primary); }
 .ofl-tab.active {
-    color: var(--accent-work);
+    color: var(--accent-work-text);
     border-bottom-color: var(--accent-work);
 }
 
@@ -1383,7 +1421,7 @@ body.timer-paused #descanso-time {
     align-items: center;
     gap: 8px;
 }
-.ofl-features-title .fa-check-circle { color: var(--accent-break); }
+.ofl-features-title .fa-check-circle { color: var(--accent-break-text); }
 
 .ofl-features-grid {
     display: grid;
@@ -1399,7 +1437,7 @@ body.timer-paused #descanso-time {
 }
 .ofl-feat.ok   { color: var(--text-secondary); }
 .ofl-feat.warn { color: var(--text-secondary); grid-column: 1 / -1; }
-.ofl-feat.ok .fa-check { color: var(--accent-break); margin-top: 2px; flex-shrink: 0; }
+.ofl-feat.ok .fa-check { color: var(--accent-break-text); margin-top: 2px; flex-shrink: 0; }
 .ofl-feat.warn .fa-exclamation { color: #DD9A54; flex-shrink: 0; }
 
 .ofl-update-note {
@@ -1412,7 +1450,7 @@ body.timer-paused #descanso-time {
     border-radius: 12px;
     padding: 12px 14px;
 }
-.ofl-update-note .fa-sync-alt { color: var(--accent-work); margin-top: 2px; flex-shrink: 0; }
+.ofl-update-note .fa-sync-alt { color: var(--accent-work-text); margin-top: 2px; flex-shrink: 0; }
 
 /* ── DESCANSO MODE (countdown) ── */
 .countdown.descanso-mode #countdown-text { display: none; }
@@ -1473,6 +1511,23 @@ body.timer-paused #descanso-time {
     .volume-slider { width: 110px; }
 }
 
+/* ── TABLET ESTRECHO / MÓVIL ≤ 560px: chips en filas ── */
+@media (max-width: 560px) {
+    .config-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .config-chip {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+    .chip-label { justify-content: flex-start; }
+    .chip-ctrl  { flex: 0 0 auto; }
+}
+
 /* ── MÓVIL  ≤ 480px ── */
 @media (max-width: 480px) {
     body { padding: 14px 10px; }
@@ -1482,9 +1537,9 @@ body.timer-paused #descanso-time {
 
     /* Config chips: más compactos en móvil */
     .config-row { gap: 8px; }
-    .config-chip { padding: 10px 8px; }
+    .config-chip { padding: 9px 10px; }
     .chip-label { font-size: 0.7rem; gap: 4px; }
-    .config-chip .time-input { font-size: 1.5rem; width: 52px; }
+    .config-chip .time-input { font-size: 1.5rem; width: 48px; }
     .config-chip .time-btn { width: 26px; height: 26px; font-size: 0.9rem; }
 
     .time-btn {
@@ -1682,19 +1737,19 @@ body.timer-paused #descanso-time {
  * "Sin sonido" se quita la clase y el color vuelve al del tema.
  */
 body.amb-rain {
-    --accent-work: #3B93D9; /* celeste — misma familia que .amb-raindrop / .amb-ripple */
+    --accent-work: #2a6fa5; /* azul oscuro — 5.36:1 con blanco (WCAG AA) */
 }
 body.amb-pink {
-    --accent-work: #D1477A; /* rosa — misma familia que .amb-pink-bar / .amb-pink-glow */
+    --accent-work: #a82f5c; /* rosa oscuro — 6.51:1 con blanco */
 }
 body.amb-white {
-    --accent-work: #767676; /* gris — misma familia que .amb-pixel / .amb-freq-bar */
+    --accent-work: #6f6f6f; /* gris — 5.02:1 con blanco */
 }
 body.amb-forest {
-    --accent-work: #4C8C4A; /* verde — misma familia que .amb-glow / .amb-leaf */
+    --accent-work: #3a6e39; /* verde oscuro — 6.05:1 con blanco */
 }
 body.amb-ocean {
-    --accent-work: #235789; /* azul — misma familia que el gradiente nocturno de #ambient-bg.ocean */
+    --accent-work: #235789; /* azul noche — 7.51:1 con blanco */
 }
 .donation-img-responsive {
     max-width: 100%;

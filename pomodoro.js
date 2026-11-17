@@ -1,4 +1,6 @@
-// pomodoro.js — revision v17 (aria-hidden en ícono offline modal; location.hash preservado en applyURLPreset; comentario de sincronización SOUNDS_CACHE)
+// pomodoro.js — revision v18
+// (notificaciones vía Service Worker, deadline en segundo plano, título dinámico,
+//  modales sin carreras de foco/timeout, atajos de teclado corregidos)
 'use strict';
 
 // ==================== REFS DOM ====================
@@ -22,6 +24,12 @@ let breakMinutes = 10;
 // Usados para compensar el drift acumulado de setInterval en sesiones largas.
 let phaseStartTime = null;
 let phaseStartSeconds = 0;
+// Timeout que dispara la comprobación de fin de fase mientras la pestaña está
+// oculta. setInterval se congela en segundo plano; este deadline garantiza que
+// la transición y la notificación ocurran aunque el usuario no vuelva a la app.
+let bgDeadlineTimeout = null;
+// Título original del documento, para restaurarlo al terminar/reiniciar.
+let _baseDocumentTitle = '';
 // Flag para suprimir la transición CSS en el primer frame de cada fase
 // (debe declararse aquí con el resto del estado, no abajo en el código)
 let _suppressProgressTransition = false;
@@ -546,6 +554,14 @@ async function cacheAmbientSound(type, url) {
         return;
     }
 
+    // Si el sonido ya está guardado, no repetir la descarga.
+    try {
+        if (await isSoundCached(url)) {
+            updateBannerForSound(type, true);
+            return;
+        }
+    } catch (_) {}
+
     // Capturar el tipo al inicio: si el usuario cambia el selector durante la descarga,
     // el tipo ya no coincidirá con currentAmbient y abortaremos la actualización de UI.
     const capturedType = type;
@@ -635,7 +651,8 @@ async function cacheAmbientSound(type, url) {
         btn.classList.remove('downloading');
         btn.classList.add('cached');
         btn.innerHTML = `<i class="fas fa-check"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaved')}`;
-        btn.disabled  = false;
+        // Mantener deshabilitado: ya está guardado y no debe re-descargarse.
+        btn.disabled  = true;
         showToast(`✅ ${ambientOptions[capturedType].name} ${(window.i18n?.t ?? (k=>k))('offlineSaveSuccess')}`);
         setTimeout(() => { progressWrap.style.display = 'none'; }, 1200);
 
@@ -647,7 +664,10 @@ async function cacheAmbientSound(type, url) {
         btn.innerHTML = `<i class="fas fa-download"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaveBtn')}`;
         if (currentAmbient === capturedType) {
             console.error('Error cacheando sonido:', err);
-            showToast((window.i18n?.t ?? (k=>k))('offlineSaveError'));
+            const _te = window.i18n?.t ?? (k=>k);
+            // QuotaExceededError: el dispositivo no tiene espacio para el audio.
+            const isQuota = err && (err.name === 'QuotaExceededError' || err.code === 22);
+            showToast(isQuota ? _te('offlineQuotaError') : _te('offlineSaveError'));
         }
     }
 }
@@ -667,6 +687,8 @@ function updateBannerForSound(type, isCached) {
     if (isCached) {
         btn.classList.add('cached');
         btn.innerHTML = `<i class="fas fa-check"></i> ${(window.i18n?.t ?? (k=>k))('offlineSaved')}`;
+        // Ya guardado: no permitir re-descargar el mismo sonido.
+        btn.disabled = true;
         banner.classList.remove('hidden');
     } else {
         if (!navigator.onLine) {
@@ -715,7 +737,9 @@ function initInstallButton() {
         }
     });
 
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    // iPadOS 13+ se identifica como Mac: la UA por sí sola no basta.
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                  (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isIos && !isStandalone) btn.classList.remove('hidden');
 }
@@ -751,6 +775,10 @@ function initModals() {
 
 // Elemento que tenía el foco antes de abrir el modal (para restaurarlo al cerrar)
 let _lastFocusedElement = null;
+// Timeout de apertura del modal y token para invalidar aperturas antiguas.
+// Sin esto, abrir/cerrar rápido deja modales fantasma o restaura el foco mal.
+let _modalOpenTimeout = null;
+let _modalOpenToken = 0;
 
 function restorePageScroll() {
     document.body.style.overflow = '';
@@ -776,24 +804,41 @@ function trapFocus(modal, e) {
 }
 
 function openModal(id) {
-    // Guardar foco actual para restaurarlo al cerrar
+    // Guardar foco actual para restaurarlo al cerrar el modal definitivamente
     _lastFocusedElement = document.activeElement;
-    // Cerrar modales abiertos sin restaurar scroll (se restaurará cuando abra el nuevo)
-    closeAllModals(false);
+    // Cerrar modales abiertos sin restaurar scroll ni foco (el foco se
+    // restaurará al cerrar el nuevo modal). closeAllModals invalida también
+    // cualquier apertura pendiente anterior.
+    if (_modalOpenTimeout) {
+        clearTimeout(_modalOpenTimeout);
+        _modalOpenTimeout = null;
+    }
+    closeAllModals(false, false);
+    // Token propio de esta apertura: cualquier cierre posterior lo invalida.
+    const token = ++_modalOpenToken;
     const modal   = document.getElementById(id);
     const overlay = document.getElementById('modal-overlay');
     if (!modal) { restorePageScroll(); return; }
+    // Cancelar un cierre pendiente del mismo modal: si el usuario lo reabre
+    // antes de los 250 ms, el timeout anterior lo ocultaría.
+    if (modal._closeTimeout) {
+        clearTimeout(modal._closeTimeout);
+        modal._closeTimeout = null;
+    }
     // Registrar trap de foco — se elimina en closeAllModals
     modal._focusTrapHandler = (e) => { if (e.key === 'Tab') trapFocus(modal, e); };
     // Esperar al transition del modal previo (250ms) antes de abrir el nuevo,
     // evitando que overflow:hidden quede atascado si dos modales se solapan.
-    setTimeout(() => {
+    _modalOpenTimeout = setTimeout(() => {
+        _modalOpenTimeout = null;
+        if (token !== _modalOpenToken) return;
         overlay.classList.remove('hidden');
         modal.classList.remove('hidden');
         // Ocultar el contenido principal para lectores de pantalla mientras el modal está abierto
         const mainEl = document.getElementById('main-content');
         if (mainEl) mainEl.setAttribute('aria-hidden', 'true');
         requestAnimationFrame(() => {
+            if (token !== _modalOpenToken) return;
             modal.classList.add('open');
             // Mover foco al primer elemento focusable dentro del modal
             const firstFocusable = modal.querySelector(FOCUSABLE_SELECTORS);
@@ -804,7 +849,14 @@ function openModal(id) {
     }, 260);
 }
 
-function closeAllModals(restoreScroll = true) {
+function closeAllModals(restoreScroll = true, restoreFocus = true) {
+    // Invalidar aperturas pendientes: si se cierra antes de los 260 ms, el
+    // modal no debe aparecer después.
+    _modalOpenToken++;
+    if (_modalOpenTimeout) {
+        clearTimeout(_modalOpenTimeout);
+        _modalOpenTimeout = null;
+    }
     document.querySelectorAll('.modal.open').forEach(m => {
         m.classList.remove('open');
         // Eliminar focus trap del modal que se cierra
@@ -812,7 +864,9 @@ function closeAllModals(restoreScroll = true) {
             m.removeEventListener('keydown', m._focusTrapHandler);
             m._focusTrapHandler = null;
         }
-        setTimeout(() => {
+        if (m._closeTimeout) clearTimeout(m._closeTimeout);
+        m._closeTimeout = setTimeout(() => {
+            m._closeTimeout = null;
             m.classList.add('hidden');
             // Si era el modal de sugerencias, restaurar el formulario por si
             // el estado de éxito estaba visible, para que la próxima apertura
@@ -834,9 +888,12 @@ function closeAllModals(restoreScroll = true) {
     const mainEl = document.getElementById('main-content');
     if (mainEl) mainEl.removeAttribute('aria-hidden');
     if (restoreScroll) restorePageScroll();
-    // Restaurar foco al elemento que lo tenía antes de abrir el modal
-    if (_lastFocusedElement && typeof _lastFocusedElement.focus === 'function') {
-        try { _lastFocusedElement.focus(); } catch (_) {}
+    // Restaurar foco al elemento que lo tenía antes de abrir el modal.
+    // Al cambiar de modal no se restaura ni se pierde la referencia.
+    if (restoreFocus) {
+        if (_lastFocusedElement && typeof _lastFocusedElement.focus === 'function') {
+            try { _lastFocusedElement.focus(); } catch (_) {}
+        }
         _lastFocusedElement = null;
     }
 }
@@ -905,6 +962,41 @@ function _clipboardFallback(text, btn) {
 // para poder cancelarlo si el usuario vuelve a pulsar antes de que expire.
 let _suggestionRestoreTimeout = null;
 
+// Muestra el estado de éxito, limpia el formulario y programa su restauración.
+// Se usa tanto en el envío real como en el descarte silencioso del honeypot.
+function _showSuggestionSuccess() {
+    const textarea    = document.getElementById('suggestion-text');
+    const nameInput   = document.getElementById('suggestion-name');
+    const emailInput  = document.getElementById('suggestion-email');
+    const honeypot    = document.getElementById('suggestion-hp');
+    const charCurrent = document.getElementById('char-current');
+    const submitBtn   = document.getElementById('suggestion-submit');
+    const formEl      = document.getElementById('suggestion-form');
+    const successEl   = document.getElementById('suggestion-success');
+
+    if (formEl)    formEl.classList.add('hidden');
+    if (successEl) successEl.classList.remove('hidden');
+
+    // Limpiar campos para cuando el modal vuelva a abrirse
+    if (textarea)    textarea.value = '';
+    if (nameInput)   nameInput.value = '';
+    if (emailInput)  emailInput.value = '';
+    if (honeypot)    honeypot.value = '';
+    if (charCurrent) charCurrent.textContent = '0';
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${(window.i18n?.t ?? (k=>k))('suggestionSubmit')}`;
+    }
+
+    // Restaurar formulario después de 4 s
+    if (_suggestionRestoreTimeout) clearTimeout(_suggestionRestoreTimeout);
+    _suggestionRestoreTimeout = setTimeout(() => {
+        _suggestionRestoreTimeout = null;
+        if (formEl)    formEl.classList.remove('hidden');
+        if (successEl) successEl.classList.add('hidden');
+    }, 4000);
+}
+
 function initSuggestionForm() {
     const textarea    = document.getElementById('suggestion-text');
     const charCurrent = document.getElementById('char-current');
@@ -948,6 +1040,14 @@ function initSuggestionForm() {
             return;
         }
 
+        // Honeypot: un humano nunca ve ni rellena este campo oculto. Si tiene
+        // valor, mostramos el éxito sin enviar nada para no dar pistas al bot.
+        const honeypot = document.getElementById('suggestion-hp');
+        if (honeypot && honeypot.value.trim()) {
+            _showSuggestionSuccess();
+            return;
+        }
+
         // Cancelar timeout previo si existe
         if (_suggestionRestoreTimeout) {
             clearTimeout(_suggestionRestoreTimeout);
@@ -963,8 +1063,14 @@ function initSuggestionForm() {
             email:   email || '(no indicado)',
             mensaje: text,
             _subject: 'Nueva sugerencia — Pomodoro Timer',
-            _captcha: 'false'   // deshabilitar captcha de FormSubmit
+            _captcha: 'false',  // deshabilitar captcha de FormSubmit
+            _honey:   ''        // el honeypot real se valida antes de enviar
         };
+
+        // AbortController: una petición colgada no debe dejar el botón atrapado
+        // en "Enviando..." para siempre.
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(() => controller.abort(), 15000);
 
         fetch(FORMSUBMIT_ENDPOINT, {
             method:  'POST',
@@ -972,39 +1078,23 @@ function initSuggestionForm() {
                 'Content-Type':  'application/json',
                 'Accept':        'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: controller.signal
         })
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.json();
         })
         .then(() => {
-            // Mostrar pantalla de éxito dentro del modal
-            const formEl    = document.getElementById('suggestion-form');
-            const successEl = document.getElementById('suggestion-success');
-            if (formEl)    formEl.classList.add('hidden');
-            if (successEl) successEl.classList.remove('hidden');
-
-            // Limpiar campos para cuando el modal vuelva a abrirse
-            textarea.value = '';
-            if (nameInput)  nameInput.value  = '';
-            if (emailInput) emailInput.value = '';
-            charCurrent.textContent = '0';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${(window.i18n?.t ?? (k=>k))('suggestionSubmit')}`;
-
-            // Restaurar formulario después de 4 s
-            _suggestionRestoreTimeout = setTimeout(() => {
-                _suggestionRestoreTimeout = null;
-                if (formEl)    formEl.classList.remove('hidden');
-                if (successEl) successEl.classList.add('hidden');
-            }, 4000);
+            _showSuggestionSuccess();
         })
-        .catch(() => {
+        .catch((err) => {
+            const _te = window.i18n?.t ?? (k=>k);
             submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${(window.i18n?.t ?? (k=>k))('suggestionSubmit')}`;
-            showToast((window.i18n?.t ?? (k=>k))('toastSendError'));
-        });
+            submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${_te('suggestionSubmit')}`;
+            showToast(err && err.name === 'AbortError' ? _te('toastSendTimeout') : _te('toastSendError'));
+        })
+        .finally(() => clearTimeout(timeoutId));
     });
 }
 
@@ -1091,9 +1181,41 @@ async function requestNotificationPermissionOnUserGesture() {
     }
 }
 
-function showNotification(title, body) {
-    if (notificationsEnabled) {
-        new Notification(title, { body, icon: './img/icons/icon-pomodoro.svg', tag: 'pomodoro' });
+// Muestra una notificación. Prioriza la API del Service Worker:
+//   - Chrome Android lanza TypeError con `new Notification()`.
+//   - iOS solo permite notificaciones vía Service Worker en PWA instalada.
+// Cualquier fallo se absorbe aquí: la notificación NUNCA debe abortar una
+// transición de fase (startTimer / mostrarPantallaFin se llaman después).
+async function showNotification(title, body) {
+    if (!notificationsEnabled || !('Notification' in window)) return;
+
+    const options = {
+        body,
+        icon: './img/icons/icon-192.png',
+        badge: './img/icons/icon-192.png',
+        tag: 'pomodoro',
+        renotify: true
+    };
+
+    try {
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration && typeof registration.showNotification === 'function') {
+                await registration.showNotification(title, options);
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('No se pudo notificar vía Service Worker:', e);
+    }
+
+    // Fallback para navegadores de escritorio que aún no controlan el SW.
+    try {
+        if (Notification.permission === 'granted') {
+            new Notification(title, options);
+        }
+    } catch (e) {
+        console.warn('No se pudo mostrar la notificación:', e);
     }
 }
 
@@ -1199,9 +1321,13 @@ function applyURLPreset() {
 
 function _applyTheme(pref) {
     // pref: 'dark' | 'light' | null
-    document.body.classList.remove('dark', 'light');
-    if (pref === 'dark')  document.body.classList.add('dark');
-    if (pref === 'light') document.body.classList.add('light');
+    // Sincronizar <html> y <body>: theme-init.js aplica el tema en <html> antes
+    // del primer paint (anti-FOUC) y el CSS contempla ambos selectores.
+    [document.documentElement, document.body].forEach(el => {
+        el.classList.remove('dark', 'light');
+        if (pref === 'dark')  el.classList.add('dark');
+        if (pref === 'light') el.classList.add('light');
+    });
 
     // El botón siempre muestra la acción a realizar, no el estado actual.
     // Si estamos en oscuro (por preferencia guardada O por sistema), ofrecer claro (☀️ → irá a claro).
@@ -1254,7 +1380,61 @@ function initTheme() {
 }
 
 // ==================== CONTROLES DE CONFIGURACIÓN ====================
+// Devuelve true si el foco está en un control interactivo. Los atajos globales
+// (Enter para iniciar, Espacio para pausar) deben ignorarse en ese caso: el
+// navegador ya activa el botón/enlace con esas teclas.
+function isInteractiveElement(el) {
+    if (!el || el === document.body || el === document.documentElement) return false;
+    if (el.isContentEditable) return true;
+    return Boolean(el.closest(
+        'button, a[href], input, textarea, select, summary, ' +
+        '[role="button"], [role="link"], [role="tab"], [contenteditable="true"]'
+    ));
+}
+
+// Persistencia de la configuración (trabajo / descanso / ciclos) para que
+// sobreviva a recargas. No se guarda el estado de la sesión en curso.
+const CONFIG_STORAGE_KEY = 'pomodoroConfig';
+
+function loadSavedConfig() {
+    try {
+        const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        const restore = (id, value, min, max) => {
+            const el = document.getElementById(id);
+            if (!el || !Number.isFinite(Number(value))) return;
+            el.value = Math.min(max, Math.max(min, Math.round(Number(value))));
+        };
+        restore('work-minutes', cfg.work, 1, 180);
+        restore('break-minutes', cfg.break, 1, 60);
+        restore('ciclos-input', cfg.cycles, 1, 20);
+    } catch (_) {}
+}
+
+function saveConfig() {
+    const read = id => parseInt(document.getElementById(id)?.value);
+    const work   = read('work-minutes');
+    const breakT = read('break-minutes');
+    const cycles = read('ciclos-input');
+    if (!Number.isFinite(work) || !Number.isFinite(breakT) || !Number.isFinite(cycles)) return;
+    try {
+        localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ work, break: breakT, cycles }));
+    } catch (_) {}
+}
+
+// Pide almacenamiento persistente para reducir el riesgo de que el navegador
+// desaloje los sonidos guardados junto con el resto de datos del sitio.
+// Es best-effort: el navegador puede denegarlo sin interacción o instalación.
+function requestPersistentStorage() {
+    if (!navigator.storage || typeof navigator.storage.persist !== 'function') return;
+    navigator.storage.persisted()
+        .then(already => already ? true : navigator.storage.persist())
+        .catch(() => false);
+}
+
 function initConfigControls() {
+    loadSavedConfig();
     const startBtn    = document.getElementById('start-btn');
     const workInput   = document.getElementById('work-minutes');
     const breakInput  = document.getElementById('break-minutes');
@@ -1294,8 +1474,9 @@ function initConfigControls() {
             readClampedValue(inp, parseInt(inp.min), parseInt(inp.max));
             updateSummary();
             syncActivePreset();
+            saveConfig();
         });
-        inp.addEventListener('input', () => { updateSummary(); syncActivePreset(); });
+        inp.addEventListener('input', () => { updateSummary(); syncActivePreset(); saveConfig(); });
     });
 
     // Pluralizar label de ciclos
@@ -1323,6 +1504,7 @@ function initConfigControls() {
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
             updateSummary();
+            saveConfig();
         });
     });
 
@@ -1339,16 +1521,14 @@ function initConfigControls() {
 
     if (startBtn) startBtn.addEventListener('click', iniciarPomodoros);
 
-    // Enter inicia solo si no hay modal abierto y estamos en la config
+    // Enter inicia solo si no hay modal abierto, estamos en la config y el foco
+    // no está sobre un control interactivo (evita iniciar al pulsar un preset).
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter'
-            && !ciclosContainer.classList.contains('hidden')
-            && !isAnyModalOpen()) {
-            // No disparar si el foco está en un campo editable
-            const tag = document.activeElement?.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-            iniciarPomodoros();
-        }
+        if (e.key !== 'Enter' || e.repeat) return;
+        if (ciclosContainer.classList.contains('hidden') || isAnyModalOpen()) return;
+        if (isInteractiveElement(document.activeElement)) return;
+        e.preventDefault();
+        iniciarPomodoros();
     });
 
     updateSummary();
@@ -1480,6 +1660,43 @@ function iniciarDescanso() {
     startTimer();
 }
 
+// Mantiene el título de la pestaña con el tiempo restante (visible en la barra
+// de pestañas aunque la app esté en segundo plano).
+function _updateDocumentTitle() {
+    if (!_baseDocumentTitle) return;
+    if (sessionFinished || !countdownDiv || countdownDiv.classList.contains('hidden')) {
+        document.title = _baseDocumentTitle;
+        return;
+    }
+    const _td = window.i18n?.t ?? (k => k);
+    const phase  = isDescanso ? _td('modeBreak') : _td('modeWork');
+    const paused = isPaused ? '⏸ ' : '';
+    document.title = `${paused}${formatTime(tiempoActual)} · ${phase} — ${_baseDocumentTitle}`;
+}
+
+// ==================== DEADLINE EN SEGUNDO PLANO ====================
+// setInterval se congela/throttlea cuando la pestaña está oculta. Este timeout
+// se programa para el momento exacto en que debe terminar la fase, de modo que
+// la transición y la notificación ocurran aunque el usuario no vuelva a la app.
+function clearBackgroundDeadline() {
+    if (bgDeadlineTimeout !== null) {
+        clearTimeout(bgDeadlineTimeout);
+        bgDeadlineTimeout = null;
+    }
+}
+
+function scheduleBackgroundDeadline() {
+    clearBackgroundDeadline();
+    if (isPaused || isTransitioning || sessionFinished || !phaseStartTime) return;
+    const deadline  = phaseStartTime + phaseStartSeconds * 1000;
+    const remaining = Math.max(0, deadline - Date.now());
+    // +350 ms de margen: al disparar, el cálculo por timestamp ya debe dar <= 0.
+    bgDeadlineTimeout = setTimeout(() => {
+        bgDeadlineTimeout = null;
+        tick();
+    }, remaining + 350);
+}
+
 function startTimer() {
     // Reset the transition guard here — after the new phase is fully configured —
     // so any stale tick from the old interval can't sneak through during setup.
@@ -1491,6 +1708,7 @@ function startTimer() {
     phaseStartTime    = Date.now();
     phaseStartSeconds = tiempoActual;
     intervalo = setInterval(tick, 1000);
+    scheduleBackgroundDeadline();
     // Reanudar audio ambiental aquí, con el timer ya configurado, salvo que el
     // usuario lo haya muteado manualmente o la sesión haya finalizado.
     if (ambientSound && !userMutedAmbient && !ambientSound.playing() && !sessionFinished) {
@@ -1545,48 +1763,52 @@ function handleTimerVisibilityChange() {
     if (document.visibilityState === 'hidden') {
         timerWasRunningWhenHidden = Boolean(intervalo && !isPaused && !isTransitioning && !sessionFinished);
         hiddenAt = timerWasRunningWhenHidden ? Date.now() : null;
-        if (timerWasRunningWhenHidden) {
-            clearInterval(intervalo);
-            intervalo = null;
-        }
+        // NO se limpia el intervalo: muchos navegadores lo siguen ejecutando
+        // (throttled) y el deadline garantiza la transición si se congela.
+        if (timerWasRunningWhenHidden) scheduleBackgroundDeadline();
         return;
     }
 
     if (!hiddenAt || !timerWasRunningWhenHidden) return;
 
-    const elapsedSeconds = Math.floor((Date.now() - hiddenAt) / 1000);
     hiddenAt = null;
     timerWasRunningWhenHidden = false;
+    // Al volver, el intervalo sigue activo: eliminar el deadline de fondo para
+    // reprogramarlo con el timestamp de fase ya compensado.
+    clearBackgroundDeadline();
 
     if (sessionFinished) return;
 
     // Limpiar cualquier intervalo activo (puede existir si el navegador no
-    // disparó correctamente el evento 'hidden' o en condiciones de carrera)
-    // antes de compensar el tiempo transcurrido.
+    // disparó correctamente el evento 'hidden' o en condiciones de carrera).
     if (intervalo) { clearInterval(intervalo); intervalo = null; }
 
-    if (elapsedSeconds > 0) {
-        tiempoActual = Math.max(0, tiempoActual - elapsedSeconds);
-        // Reanclar el timestamp de fase para que tick() parta desde el nuevo
-        // tiempoActual ya compensado, sin volver a restar el tiempo en background.
-        phaseStartTime    = Date.now();
-        phaseStartSeconds = tiempoActual;
-        _suppressProgressTransition = true;
-        if (tiempoActual <= 0) {
-            // Re-verificar sessionFinished: puede haber cambiado entre el guard
-            // temprano y este punto si finalizarTodo() corrió en el mismo tick.
-            if (!sessionFinished) completeCurrentPhase();
-            return;
-        }
-        // Solo actualizar pantalla si la sesión sigue activa
-        if (!sessionFinished) actualizarPantalla();
+    // Recalcular SIEMPRE desde el timestamp de la fase actual, en lugar de
+    // restar el tiempo oculto a `tiempoActual`. Si la fase terminó y cambió
+    // mientras la pestaña estaba oculta (deadline de fondo), `phaseStartTime`
+    // ya corresponde a la nueva fase y restar `elapsed` dos veces la acortaría.
+    if (phaseStartTime) {
+        const elapsed = Math.floor((Date.now() - phaseStartTime) / 1000);
+        tiempoActual = Math.max(0, phaseStartSeconds - elapsed);
     }
+
+    _suppressProgressTransition = true;
+    if (tiempoActual <= 0) {
+        // Re-verificar sessionFinished: puede haber cambiado entre el guard
+        // temprano y este punto si finalizarTodo() corrió en el mismo tick.
+        if (!sessionFinished) completeCurrentPhase();
+        return;
+    }
+    // Solo actualizar pantalla si la sesión sigue activa
+    if (!sessionFinished) actualizarPantalla();
 
     // Re-verificar antes de reanudar el timer y el audio para cerrar la ventana
     // de carrera entre el cálculo de elapsed y las funciones de inicio.
     if (sessionFinished) return;
     if (!intervalo && !isPaused && !isTransitioning) {
         startTimer();
+    } else {
+        scheduleBackgroundDeadline();
     }
     if (ambientSound && !userMutedAmbient && !ambientSound.playing()) {
         ambientSound.play();
@@ -1610,7 +1832,11 @@ function togglePause() {
         // estuvo pausado no cuente como tiempo transcurrido en tick().
         phaseStartTime    = Date.now();
         phaseStartSeconds = tiempoActual;
+        scheduleBackgroundDeadline();
+    } else {
+        clearBackgroundDeadline();
     }
+    _updateDocumentTitle();
 
     if (ambientSound) {
         if (isPaused) {
@@ -1624,7 +1850,8 @@ function togglePause() {
 function snapProgressBar(pct) {
     progressBar.style.transition = 'none';
     progressBar.style.width = `${pct}%`;
-    progressBar.setAttribute('aria-valuenow', Math.round(pct));
+    // aria-valuenow representa progreso COMPLETADO, no tiempo restante.
+    progressBar.setAttribute('aria-valuenow', Math.round(100 - pct));
     // Forzar reflow síncrono leyendo offsetWidth — garantiza que el navegador ha
     // pintado el frame sin transición antes de restaurarla, eliminando la dependencia
     // del timing del doble-rAF que podía restaurar la transición prematuramente.
@@ -1647,7 +1874,9 @@ function actualizarPantalla() {
         progressBar.style.width = `${porcentaje}%`;
     }
     const _ta = window.i18n?.t ?? (k => k);
-    progressBar.setAttribute('aria-valuenow', Math.round(porcentaje));
+    const porcentajeCompletado = Math.round(100 - porcentaje);
+    progressBar.setAttribute('aria-valuenow', porcentajeCompletado);
+    progressBar.setAttribute('aria-valuetext', `${porcentajeCompletado}%`);
     progressBar.setAttribute('aria-label',
         isDescanso ? _ta('ariaBreakTimer') : _ta('ariaWorkTimer'));
 
@@ -1670,6 +1899,8 @@ function actualizarPantalla() {
         modoActual.parentElement.classList.remove('mode-break');
         modoActual.parentElement.classList.add('mode-work');
     }
+
+    _updateDocumentTitle();
 }
 
 function cleanupAudioState() {
@@ -1727,6 +1958,7 @@ function cleanupAudioState() {
 function resetSessionState() {
     clearInterval(intervalo);
     intervalo = null;
+    clearBackgroundDeadline();
     // Cancelar confetti si aún está activo
     if (_confettiInterval) { clearInterval(_confettiInterval); _confettiInterval = null; }
     sessionFinished = false;
@@ -1806,7 +2038,10 @@ function resetSessionState() {
     const descansoLabel = document.getElementById('descanso-label');
     if (descansoLabel) descansoLabel.textContent = `${breakMinutes} ${(window.i18n?.t ?? (k=>k))('breakMinutesLabel')}`;
     progressBar.style.width = '100%';
+    progressBar.setAttribute('aria-valuenow', '0');
+    progressBar.setAttribute('aria-valuetext', '0%');
     updateSummary();
+    _updateDocumentTitle();
 }
 
 // Reinicia el timer desde el ciclo 1 manteniéndose en la vista del countdown.
@@ -1815,6 +2050,7 @@ function resetSessionState() {
 function _restartFromBeginning() {
     clearInterval(intervalo);
     intervalo = null;
+    clearBackgroundDeadline();
     if (_confettiInterval) { clearInterval(_confettiInterval); _confettiInterval = null; }
 
     sessionFinished   = false;
@@ -1868,6 +2104,7 @@ function _restartFromBeginning() {
 function finalizarTodo() {
     clearInterval(intervalo);
     intervalo = null;
+    clearBackgroundDeadline();
     sessionFinished = true;
     isPaused = false; // limpiar estado de pausa por si el timer terminó estando pausado
     isTransitioning = false; // limpiar para no bloquear futuros runs si se reutiliza el estado
@@ -1903,6 +2140,7 @@ function finalizarTodo() {
     launchVictoryConfetti();
     mostrarPantallaFin();
     cleanupAudioState();
+    _updateDocumentTitle();
 }
 
 function mostrarPantallaFin() {
@@ -1930,7 +2168,7 @@ function mostrarPantallaFin() {
         emoji.textContent = '🎉';
 
         const title = document.createElement('h2');
-        title.style.cssText = 'font-size:1.6rem;font-weight:700;color:var(--accent-break);margin-bottom:8px';
+        title.style.cssText = 'font-size:1.6rem;font-weight:700;color:var(--accent-break-text);margin-bottom:8px';
         const _tFin2 = window.i18n?.t ?? (k => k);
         title.textContent = _tFin2('sessionComplete');
 
@@ -1986,6 +2224,15 @@ function mostrarPantallaFin() {
     if (progressContainer) progressContainer.classList.add('hidden');
     if (controls)          controls.classList.add('hidden');
     if (infoCiclo)         infoCiclo.classList.add('hidden');
+
+    // Mover el foco a la acción principal para que el teclado/lector de pantalla
+    // no quede en un botón que acaba de ocultarse.
+    if (document.visibilityState === 'visible') {
+        requestAnimationFrame(() => {
+            const newBtn = document.getElementById('nueva-sesion-btn');
+            if (newBtn) { try { newBtn.focus(); } catch (_) {} }
+        });
+    }
 }
 
 // ==================== SINCRONIZACIÓN I18N DINÁMICA ====================
@@ -2042,7 +2289,19 @@ let _resetConfirming = false;
 let _resetCancelTimeout = null;
 
 
+// Aviso al cerrar/recargar con una sesión en curso. El navegador muestra su
+// propio diálogo genérico; no se puede personalizar el texto.
+function handleBeforeUnload(e) {
+    if (sessionFinished) return;
+    if (!countdownDiv || countdownDiv.classList.contains('hidden')) return;
+    e.preventDefault();
+    e.returnValue = '';
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    // Guardar el título original antes de que el timer lo sustituya.
+    _baseDocumentTitle = document.title;
+
     // ── i18n: inicializar ANTES que cualquier otro init ──────────────
     if (window.i18n) {
         await window.i18n.init();
@@ -2078,6 +2337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initConfigControls();
     initOfflineGuide();
     applyURLPreset();
+    requestPersistentStorage();
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('message', event => {
@@ -2088,6 +2348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     document.addEventListener('visibilitychange', handleTimerVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
     pauseBtn.addEventListener('click', togglePause);
 
     resetBtn.addEventListener('click', (evt) => {
@@ -2147,15 +2408,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space'
-            && !sessionFinished
-            && !countdownDiv.classList.contains('hidden')
-            && !isAnyModalOpen()) {
-            const tag = document.activeElement?.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-            e.preventDefault();
-            togglePause();
-        }
+        if (e.code !== 'Space' || e.repeat) return;
+        if (sessionFinished
+            || countdownDiv.classList.contains('hidden')
+            || isAnyModalOpen()) return;
+        // No interferir con botones, enlaces ni campos: Espacio debe activar el
+        // control enfocado (p. ej. Reiniciar), no pausar el temporizador.
+        if (isInteractiveElement(document.activeElement)) return;
+        e.preventDefault();
+        togglePause();
     });
 });
 
@@ -2168,9 +2429,11 @@ function initOfflineGuide() {
     modal.dataset.initialized = 'true';
 
     // Auto-detectar plataforma para mostrar la pestaña más relevante por defecto
+    // (iPadOS 13+ se reporta como Mac; se detecta por touch points).
     const ua = navigator.userAgent.toLowerCase();
+    const isIpadOs = /macintosh/.test(ua) && navigator.maxTouchPoints > 1;
     let defaultTab = 'android';
-    if (/iphone|ipad|ipod/.test(ua)) {
+    if (/iphone|ipad|ipod/.test(ua) || isIpadOs) {
         defaultTab = 'ios';
     } else if (!/android/.test(ua)) {
         defaultTab = 'desktop';

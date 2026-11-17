@@ -2,7 +2,7 @@
 <html lang="es-ES">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv='cache-control' content='no-cache'> 
 <meta http-equiv='expires' content='0'> 
 <meta http-equiv='pragma' content='no-cache'>
@@ -43,9 +43,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Pomodoro">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- ⚠️ apple-touch-icon.png debe existir en ./icons/ (PNG 180×180 px).
+    <!-- ⚠️ apple-touch-icon.png vive en ./img/icons/ (PNG 180×180 px).
          Sin este archivo la instalación PWA en iOS falla y el precache del SW
-         lanzará un error. Genera el PNG desde icon-pomodoro.svg antes de desplegar. -->
+         lanzaría un error. Se genera desde icon-maskable-512.png. -->
     <link rel="apple-touch-icon" href="./img/icons/apple-touch-icon.png">
 
     <!-- ══ SEGURIDAD — Content Security Policy ══
@@ -136,16 +136,32 @@
     }
     </script>
 
+    <!-- Aplicar el tema guardado antes del primer paint para evitar FOUC.
+         Script externo (no inline) para respetar la CSP sin 'unsafe-inline'. -->
+    <script src="./theme-init.js"></script>
+
     <link rel="stylesheet" href="./pomodoro.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          integrity="sha384-PPIZEGYM1v8zp5Py7UjFb79S58UeqCL9pYVnVPURKEqvioPROaVAJKKLzvH2rDnI"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer">
 
     <!-- Librerías -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"
+            integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+            defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"
+            integrity="sha384-SSf4pKRrGaeWL8bdA89QvGkhZo5WvIVCGwKVzfX7z+9sSaIHtE/AkOLehofI4JVY"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+            defer></script>
 </head>
 <body>
     <a href="#main-content" class="skip-link" data-i18n="skipLink">Ir al contenido principal</a>
-    <main id="main-content">
+    <main id="main-content" tabindex="-1">
        
         <!-- Botones superiores -->
         <div class="top-buttons" role="group" aria-label="Controles de aplicación">
@@ -301,7 +317,7 @@
             </div>
 
             <div class="progress-container">
-                <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del ciclo actual"></div>
+                <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del ciclo actual"></div>
             </div>
 
             <div class="controls">
@@ -473,11 +489,20 @@
                     <i class="fas fa-paper-plane" aria-hidden="true"></i>
                     <span data-i18n="suggestionSubmit">Enviar</span>
                 </button>
+                <!-- Honeypot anti-spam: fuera de pantalla y oculto a lectores de
+                     pantalla. Un humano nunca lo ve; los bots que rellenan todos
+                     los campos lo completan y el envío se descarta. -->
+                <div class="hp-field" aria-hidden="true">
+                    <label for="suggestion-hp">No rellenar este campo</label>
+                    <input type="text" id="suggestion-hp" name="_honey" tabindex="-1"
+                           autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <p class="suggestion-privacy" data-i18n="suggestionPrivacy">Tus datos solo se usan para responderte. No se comparten con terceros.</p>
             </div>
             <!-- Estado de éxito (oculto hasta envío) -->
             <div id="suggestion-success" class="hidden" style="text-align:center;padding:24px 0">
                 <div style="font-size:2.8rem;margin-bottom:12px">✅</div>
-                <p style="font-weight:700;color:var(--accent-break);font-size:1.05rem;margin-bottom:6px" data-i18n="suggestionSuccessTitle">¡Mensaje enviado!</p>
+                <p style="font-weight:700;color:var(--accent-break-text);font-size:1.05rem;margin-bottom:6px" data-i18n="suggestionSuccessTitle">¡Mensaje enviado!</p>
                 <p style="color:var(--text-secondary);font-size:0.9rem" data-i18n="suggestionSuccessDesc">Gracias por tu feedback. Lo leeré con atención.</p>
             </div>
         </div>

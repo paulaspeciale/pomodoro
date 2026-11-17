@@ -50,6 +50,7 @@
   "offlineSaveForEnd": "to listen without connection",
   "offlineSaveSuccess": "available offline",
   "offlineSaveError": "Could not save. Check your connection.",
+  "offlineQuotaError": "Not enough device storage to save the sound.",
   "offlineNoSupport": "Your browser does not support offline cache.",
   "offlineDownloadError": "Download error",
 
@@ -78,6 +79,7 @@
   "toastBrowserTip": "ℹ️ Open this page in Chrome or Edge to install it",
   "toastLoadError": "⚠️ Could not load the sound.",
   "toastSendError": "❌ Could not send. Check your connection and try again.",
+  "toastSendTimeout": "⏱ Sending took too long. Please try again.",
   "toastMsgRequired": "⚠️ Write your message before sending",
   "toastEmailInvalid": "⚠️ That email doesn't look valid",
   "donationCopyBtn": "Copy",
@@ -109,6 +111,7 @@
   "suggestionSubmitting": "Sending...",
   "suggestionSuccessTitle": "Message sent!",
   "suggestionSuccessDesc": "Thanks for your feedback. I'll read it carefully.",
+  "suggestionPrivacy": "Your data is only used to reply to you. It is never shared with third parties.",
 
   "langSelectorLabel": "Language",
   "langEs": "Español",

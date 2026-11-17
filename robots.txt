@@ -2,6 +2,6 @@ User-agent: *
 Allow: /
 
 # Archivos de audio (no es necesario indexarlos)
-Disallow: /img/sounds/
+Disallow: /sounds/
 
 Sitemap: https://paulaspeciale.github.io/pomodoro/sitemap.xml
