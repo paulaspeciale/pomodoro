@@ -2254,21 +2254,21 @@ function mostrarPantallaFin() {
         _finScreenRendered = true;
         const finEl = document.createElement('div');
         finEl.id = 'fin-sesion';
-        finEl.style.cssText = 'text-align:center;padding:10px 0 20px;animation:fadeInScale 0.5s ease forwards';
+        finEl.className = 'fin-screen';
 
         // Construir el DOM manualmente para evitar interpolación de valores
         // numéricos en innerHTML (patrón XSS aunque aquí el valor sea seguro).
         const emoji = document.createElement('div');
-        emoji.style.cssText = 'font-size:3.5rem;margin-bottom:12px';
-        emoji.textContent = '🎉';
+        emoji.className = 'fin-emblem';
+        emoji.textContent = '✓';
 
         const title = document.createElement('h2');
-        title.style.cssText = 'font-size:1.6rem;font-weight:700;color:var(--accent-break-text);margin-bottom:8px';
+        title.className = 'fin-title';
         const _tFin2 = window.i18n?.t ?? (k => k);
         title.textContent = _tFin2('sessionComplete');
 
         const desc = document.createElement('p');
-        desc.style.cssText = 'color:var(--text-secondary);font-size:0.95rem;margin-bottom:28px';
+        desc.className = 'fin-desc';
         desc.textContent = `${_tFin2('sessionCompleteDesc1')} `;
         const strong = document.createElement('strong');
         strong.style.color = 'var(--text-primary)';
@@ -2279,22 +2279,7 @@ function mostrarPantallaFin() {
 
         const btn = document.createElement('button');
         btn.id = 'nueva-sesion-btn';
-        btn.style.cssText = [
-            'padding:14px 32px',
-            'background:var(--accent-work)',
-            'color:white',
-            'border:none',
-            'border-radius:50px',
-            'font-size:1.05rem',
-            'font-weight:700',
-            'font-family:inherit',
-            'cursor:pointer',
-            'display:inline-flex',
-            'align-items:center',
-            'gap:10px',
-            'box-shadow:0 6px 20px rgba(211,47,47,0.35)',
-            'transition:all 0.3s ease'
-        ].join(';');
+        btn.className = 'fin-btn';
         // Construir el contenido del botón íntegramente con el DOM API,
         // sin mezclar innerHTML y appendChild en el mismo elemento.
         const btnIcon = document.createElement('i');

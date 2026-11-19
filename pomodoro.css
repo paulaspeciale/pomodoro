@@ -2604,3 +2604,1153 @@ html:not(.light) body.amb-ocean { --accent-work: #235789; }
     .countdown { animation: none; }
     .timer-ring-progress { transition: none; }
 }
+
+/* ================================================================
+   UI ELEGANCE v20
+   Refinamiento editorial: tipografía serif para la marca y el reloj,
+   paleta ivory/oxblood más sobria, hairlines doradas, menos rellenos
+   de color y microinteracciones discretas.
+   ================================================================ */
+
+/* ── Paleta refinada ──────────────────────────────────────────── */
+:root {
+    --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype",
+                    "Book Antiqua", Georgia, "Times New Roman", serif;
+
+    --bg:              #f6f1e8;
+    --surface:         #fbf7f0;
+    --card:            #fffdf8;
+    --text-primary:    #2b2119;
+    --text-secondary:  #7a6a58;
+    --accent-work:     #8f3532;
+    --accent-break:    #4c5a35;
+    --accent-work-text:  #8f3532;
+    --accent-break-text: #4c5a35;
+    --border:          #e5dac9;
+    --progress-bg:     #ece2d3;
+    --shadow:          rgba(74, 48, 30, 0.10);
+    --card-bg:         #fffdf8;
+    --border-color:    #e5dac9;
+}
+
+body.light,
+html.light {
+    --bg:              #f6f1e8;
+    --surface:         #fbf7f0;
+    --card:            #fffdf8;
+    --text-primary:    #2b2119;
+    --text-secondary:  #7a6a58;
+    --accent-work:     #8f3532;
+    --accent-break:    #4c5a35;
+    --accent-work-text:  #8f3532;
+    --accent-break-text: #4c5a35;
+    --border:          #e5dac9;
+    --progress-bg:     #ece2d3;
+    --shadow:          rgba(74, 48, 30, 0.10);
+    --card-bg:         #fffdf8;
+    --border-color:    #e5dac9;
+}
+
+@media (prefers-color-scheme: dark) {
+    body:not(.light),
+    html:not(.light) {
+        --bg:              #141110;
+        --surface:         #1b1714;
+        --card:            #211c18;
+        --text-primary:    #f2e9dd;
+        --text-secondary:  #b7a692;
+        --accent-work:     #a84b43;
+        --accent-break:    #6b7a4a;
+        --accent-work-text:  #e0a093;
+        --accent-break-text: #b9c78f;
+        --border:          #3a3029;
+        --progress-bg:     #2a2320;
+        --shadow:          rgba(0, 0, 0, 0.50);
+        --card-bg:         #211c18;
+        --border-color:    #3a3029;
+    }
+}
+
+body.dark,
+html.dark {
+    --bg:              #141110;
+    --surface:         #1b1714;
+    --card:            #211c18;
+    --text-primary:    #f2e9dd;
+    --text-secondary:  #b7a692;
+    --accent-work:     #a84b43;
+    --accent-break:    #6b7a4a;
+    --accent-work-text:  #e0a093;
+    --accent-break-text: #b9c78f;
+    --border:          #3a3029;
+    --progress-bg:     #2a2320;
+    --shadow:          rgba(0, 0, 0, 0.50);
+    --card-bg:         #211c18;
+    --border-color:    #3a3029;
+}
+
+/* ── Lienzo ───────────────────────────────────────────────────── */
+body {
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(900px 460px at 50% -10%,
+            color-mix(in srgb, var(--accent-work) 6%, transparent), transparent 70%),
+        radial-gradient(680px 360px at 102% 104%,
+            color-mix(in srgb, var(--accent-break) 4%, transparent), transparent 72%);
+    background-attachment: fixed;
+}
+
+main { max-width: 520px; }
+
+/* ── Marca ────────────────────────────────────────────────────── */
+.brand {
+    margin: 8px 0 30px;
+}
+
+.brand-mark {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 18px;
+    border-radius: 50%;
+    color: var(--accent-work);
+    background: color-mix(in srgb, var(--card) 70%, transparent);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 10px var(--shadow);
+}
+
+.brand-mark-svg {
+    width: 33px;
+    height: 33px;
+    display: block;
+}
+
+.brand h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.15rem, 5vw, 2.6rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.08;
+    margin-bottom: 7px;
+}
+
+.config-subtitle {
+    margin: 0;
+    font-size: 0.86rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+}
+
+.brand::after {
+    content: "";
+    display: block;
+    width: 46px;
+    height: 1px;
+    margin: 20px auto 0;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+/* ── Barra superior ───────────────────────────────────────────── */
+.top-buttons {
+    margin-bottom: 16px;
+    gap: 8px;
+}
+
+.lang-selector {
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 55%, transparent);
+}
+
+.lang-btn {
+    min-height: 28px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+.lang-btn:hover {
+    color: var(--text-primary);
+    background: transparent;
+}
+
+.lang-btn.active,
+.lang-btn[aria-pressed="true"] {
+    background: var(--card);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.theme-toggle {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    box-shadow: none;
+}
+
+.theme-toggle:hover {
+    background: var(--card);
+    color: var(--text-primary);
+    transform: none;
+}
+
+/* ── Configuración ────────────────────────────────────────────── */
+.config-row {
+    gap: 8px;
+}
+
+.config-chip {
+    padding: 14px 10px 13px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--card) 62%, transparent);
+    box-shadow: none;
+}
+
+.config-chip:hover {
+    border-color: color-mix(in srgb, var(--accent-work) 28%, var(--border));
+}
+
+.config-chip:focus-within {
+    border-color: color-mix(in srgb, var(--accent-work) 55%, var(--border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-work) 10%, transparent);
+}
+
+.chip-label {
+    gap: 5px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--text-secondary);
+}
+
+.chip-label i {
+    font-size: 0.7rem;
+    color: var(--accent-work-text);
+    opacity: 0.8;
+}
+
+.config-chip .time-input {
+    width: 60px;
+    font-family: var(--font-display);
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+.config-chip .time-unit {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+
+.config-chip .time-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+}
+
+.config-chip .time-btn:hover {
+    background: color-mix(in srgb, var(--accent-work) 8%, transparent);
+    border-color: var(--border);
+    color: var(--accent-work-text);
+    transform: none;
+}
+
+.config-summary {
+    gap: 9px;
+    margin: 16px auto 22px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0.76rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+.config-summary::before {
+    content: "";
+    width: 18px;
+    height: 1px;
+    background: var(--border);
+}
+
+.config-summary strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ── Presets ──────────────────────────────────────────────────── */
+.presets {
+    margin-bottom: 22px;
+}
+
+.presets-label {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 10px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--text-secondary);
+}
+
+.presets-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.presets-row {
+    gap: 6px;
+}
+
+.preset-btn {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+.preset-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-work) 38%, var(--border));
+    color: var(--text-primary);
+    transform: none;
+}
+
+.preset-btn.active {
+    background: color-mix(in srgb, var(--accent-work) 8%, var(--card));
+    border-color: color-mix(in srgb, var(--accent-work) 50%, var(--border));
+    color: var(--accent-work-text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-work) 12%, transparent);
+}
+
+/* ── Botón comenzar ───────────────────────────────────────────── */
+.start-btn {
+    min-height: 56px;
+    gap: 10px;
+    padding: 16px 24px;
+    border: 1px solid color-mix(in srgb, var(--accent-work) 80%, #000);
+    border-radius: 14px;
+    background: var(--accent-work);
+    background-image: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent-work) 94%, #fff),
+        color-mix(in srgb, var(--accent-work) 88%, #000));
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #fff;
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-work) 20%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.start-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-work) 24%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.start-btn:active {
+    transform: translateY(0);
+}
+
+.start-btn i {
+    font-size: 0.78em;
+}
+
+/* ── Tarjeta del temporizador ─────────────────────────────────── */
+.countdown {
+    margin: 6px 0 0;
+    padding: 22px 24px 24px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: var(--card);
+    box-shadow: 0 18px 50px var(--shadow),
+                inset 0 1px 0 color-mix(in srgb, #fff 40%, transparent);
+}
+
+.countdown::before {
+    top: -120px;
+    width: 420px;
+    height: 260px;
+    background: radial-gradient(ellipse at center,
+        color-mix(in srgb, var(--accent-work) 7%, transparent), transparent 72%);
+}
+
+.countdown::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 26px;
+    right: 26px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent,
+        color-mix(in srgb, var(--accent-work) 32%, transparent), transparent);
+    pointer-events: none;
+}
+
+.countdown.descanso-mode::after {
+    background: linear-gradient(90deg, transparent,
+        color-mix(in srgb, var(--accent-break) 32%, transparent), transparent);
+}
+
+.countdown-head {
+    margin-bottom: 2px;
+}
+
+.estado {
+    padding: 6px 14px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    box-shadow: none;
+}
+
+.countdown-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+}
+
+.countdown-icon-btn:hover {
+    color: var(--accent-work-text);
+    border-color: color-mix(in srgb, var(--accent-work) 38%, var(--border));
+    background: color-mix(in srgb, var(--accent-work) 6%, transparent);
+    transform: none;
+}
+
+.countdown-icon-btn.confirming {
+    background: var(--accent-work);
+    border-color: var(--accent-work);
+    color: #fff;
+}
+
+/* ── Anillo de progreso ───────────────────────────────────────── */
+.timer-ring {
+    width: clamp(230px, 72vw, 286px);
+    margin: 10px auto 14px;
+}
+
+.timer-ring-track {
+    stroke-width: 6;
+}
+
+.timer-ring-progress {
+    stroke-width: 6;
+    filter: none;
+    transition: stroke-dashoffset 0.5s linear, stroke 0.3s ease;
+}
+
+/* Mantiene el anillo en oliva (sin halo) también en modo descanso:
+   la regla base de descanso tiene más especificidad y conserva su
+   drop-shadow, así que la neutralizamos aquí. */
+.countdown.descanso-mode .timer-ring-progress {
+    stroke: var(--accent-break);
+    filter: none;
+}
+
+.timer-ring::after {
+    inset: 15%;
+    background: radial-gradient(circle at 50% 35%,
+        color-mix(in srgb, var(--accent-work) 6%, transparent), transparent 72%);
+}
+
+.countdown.descanso-mode .timer-ring::after {
+    background: radial-gradient(circle at 50% 35%,
+        color-mix(in srgb, var(--accent-break) 7%, transparent), transparent 72%);
+}
+
+.timer-ring-content {
+    width: 78%;
+}
+
+#countdown-text,
+#descanso-time {
+    font-family: var(--font-display);
+    font-size: clamp(2.9rem, 13.5vw, 4.2rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+.phase-hint {
+    margin-top: 12px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--text-secondary);
+}
+
+/* ── Puntos de ciclo ──────────────────────────────────────────── */
+.cycle-dots {
+    gap: 5px;
+    margin: 4px 0 6px;
+    min-height: 4px;
+}
+
+.cycle-dot {
+    width: 18px;
+    height: 3px;
+    border: none;
+    border-radius: 999px;
+    background: var(--progress-bg);
+    transition: background 0.3s ease, width 0.3s ease;
+}
+
+.cycle-dot.done {
+    background: color-mix(in srgb, var(--accent-work) 45%, var(--progress-bg));
+    border: none;
+}
+
+.cycle-dot.current {
+    width: 26px;
+    height: 3px;
+    background: var(--accent-work);
+    border: none;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── Controles ────────────────────────────────────────────────── */
+.controls {
+    gap: 10px;
+    margin: 20px 0 8px;
+}
+
+.control-btn {
+    min-height: 50px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+#pause-btn {
+    background: var(--accent-work);
+    background-image: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent-work) 94%, #fff),
+        color-mix(in srgb, var(--accent-work) 88%, #000));
+    border: 1px solid color-mix(in srgb, var(--accent-work) 80%, #000);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-work) 16%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+#pause-btn:hover {
+    filter: brightness(1.04);
+    transform: none;
+}
+
+#pause-btn.paused {
+    background: var(--accent-break);
+    background-image: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent-break) 94%, #fff),
+        color-mix(in srgb, var(--accent-break) 88%, #000));
+    border-color: color-mix(in srgb, var(--accent-break) 80%, #000);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-break) 20%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Acción principal coherente con la fase de descanso.
+   Sin aclarado superior para preservar el contraste del texto blanco
+   sobre el oliva en tema oscuro. */
+.countdown.descanso-mode #pause-btn:not(.paused) {
+    background: var(--accent-break);
+    background-image: linear-gradient(180deg,
+        var(--accent-break),
+        color-mix(in srgb, var(--accent-break) 86%, #000));
+    border-color: color-mix(in srgb, var(--accent-break) 80%, #000);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-break) 16%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+#reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+#reset-btn:hover {
+    background: color-mix(in srgb, var(--card) 60%, transparent);
+    border-color: color-mix(in srgb, var(--accent-work) 32%, var(--border));
+    color: var(--text-primary);
+    transform: none;
+}
+
+.control-btn:active {
+    transform: none;
+}
+
+.shortcut-hint {
+    margin-top: 4px;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+.info-ciclo {
+    margin-top: 16px;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    color: var(--text-secondary);
+}
+
+.info-ciclo span {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+/* ── Panel ambiental ──────────────────────────────────────────── */
+.ambient-controls {
+    margin-top: 20px;
+    padding: 15px 17px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--card) 45%, transparent);
+    box-shadow: none;
+}
+
+.ambient-head {
+    gap: 8px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+}
+
+.ambient-select {
+    min-height: 40px;
+    padding: 9px 34px 9px 12px;
+    border-width: 1px;
+    border-radius: 10px;
+    background-color: var(--surface);
+    font-size: 0.84rem;
+}
+
+.ambient-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+}
+
+.volume-slider {
+    width: 92px;
+    height: 4px;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.footer-nav {
+    margin-top: 10px;
+    padding: 22px 12px 28px;
+}
+
+.footer-nav nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: center;
+    gap: 2px 26px;
+}
+
+.footer-btn {
+    position: relative;
+    justify-self: center;
+    min-height: 40px;
+    padding: 8px 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.footer-btn::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
+}
+
+.footer-btn:hover {
+    color: var(--accent-work-text);
+    border: none;
+    transform: none;
+}
+
+.footer-btn:hover::after {
+    transform: scaleX(1);
+}
+
+.footer-btn:focus-visible {
+    outline: 2px solid var(--accent-work);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ── Contenido SEO ────────────────────────────────────────────── */
+.seo-content {
+    margin: 26px auto 0;
+    padding: 26px 0 10px;
+    border: none;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    max-width: 520px;
+    font-size: 0.84rem;
+    line-height: 1.85;
+}
+
+.seo-content h2 {
+    font-family: var(--font-display);
+    font-size: 1.08rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+/* ── Modales ──────────────────────────────────────────────────── */
+.modal-overlay {
+    background: color-mix(in srgb, #241a12 55%, transparent);
+    -webkit-backdrop-filter: blur(3px) saturate(0.95);
+    backdrop-filter: blur(3px) saturate(0.95);
+}
+
+.modal {
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    background: var(--card);
+    box-shadow: 0 -24px 70px rgba(0, 0, 0, 0.26);
+}
+
+.modal h2 {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.modal-close {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.modal-close:hover {
+    background: color-mix(in srgb, var(--accent-work) 7%, transparent);
+    color: var(--text-primary);
+}
+
+/* ── Toast ────────────────────────────────────────────────────── */
+#pomo-toast {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 999px;
+    background: var(--text-primary);
+    color: var(--bg);
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+/* ── Pantalla final ───────────────────────────────────────────── */
+.fin-screen {
+    text-align: center;
+    padding: 10px 0 20px;
+    animation: fadeInScale 0.5s ease forwards;
+}
+
+.fin-emblem {
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--accent-break) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent-break) 7%, var(--card));
+    color: var(--accent-break-text);
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    line-height: 1;
+}
+
+.fin-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--accent-break-text);
+    margin-bottom: 8px;
+}
+
+.fin-desc {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    margin-bottom: 28px;
+}
+
+.fin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 15px 34px;
+    border: 1px solid color-mix(in srgb, var(--accent-work) 80%, #000);
+    border-radius: 12px;
+    background: var(--accent-work);
+    background-image: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent-work) 94%, #fff),
+        color-mix(in srgb, var(--accent-work) 88%, #000));
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-work) 20%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    transition: filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fin-btn:hover {
+    filter: brightness(1.04);
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-work) 24%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.fin-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-work) 26%, transparent),
+                0 10px 26px color-mix(in srgb, var(--accent-work) 20%, transparent),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.fin-btn i {
+    font-size: 0.82em;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 560px) {
+    .config-chip {
+        padding: 11px 12px;
+    }
+    .config-chip .time-input {
+        font-size: 1.7rem;
+        width: 54px;
+    }
+    .config-chip .time-btn {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand {
+        margin-bottom: 24px;
+    }
+    .brand-mark {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 14px;
+    }
+    .brand-mark-svg {
+        width: 30px;
+        height: 30px;
+    }
+    .brand h1 {
+        font-size: 2rem;
+    }
+    .brand::after {
+        margin-top: 16px;
+    }
+
+    .config-row {
+        gap: 8px;
+    }
+    .config-chip {
+        padding: 10px 11px;
+        border-radius: 14px;
+    }
+    .chip-label {
+        font-size: 0.6rem;
+        gap: 4px;
+    }
+    .config-chip .time-input {
+        font-size: 1.5rem;
+        width: 48px;
+    }
+    .config-chip .time-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 0.74rem;
+    }
+
+    .config-summary {
+        margin: 14px auto 18px;
+        font-size: 0.72rem;
+    }
+
+    .presets {
+        margin-bottom: 18px;
+    }
+    .preset-btn {
+        padding: 8px 10px;
+        font-size: 0.74rem;
+    }
+
+    .start-btn {
+        min-height: 54px;
+        font-size: 0.8rem;
+        border-radius: 12px;
+    }
+
+    .countdown {
+        padding: 18px 15px 20px;
+        border-radius: 20px;
+    }
+    .timer-ring {
+        width: min(72vw, 262px);
+    }
+    #countdown-text,
+    #descanso-time {
+        font-size: clamp(2.6rem, 14.5vw, 3.5rem);
+    }
+    .phase-hint {
+        font-size: 0.56rem;
+        letter-spacing: 0.14em;
+    }
+
+    .controls {
+        margin-top: 16px;
+    }
+    .control-btn {
+        padding: 11px 14px;
+        font-size: 0.84rem;
+        border-radius: 10px;
+    }
+    .info-ciclo {
+        margin-top: 14px;
+        font-size: 0.68rem;
+    }
+
+    .ambient-controls {
+        padding: 13px 14px;
+        border-radius: 14px;
+    }
+    .ambient-row {
+        flex-wrap: wrap;
+    }
+    .ambient-select {
+        flex: 1 1 100%;
+    }
+    .volume-container {
+        width: 100%;
+    }
+    .volume-slider {
+        flex: 1;
+        width: auto;
+    }
+
+    .footer-nav {
+        padding: 18px 12px 24px;
+    }
+    .footer-nav nav {
+        grid-template-columns: repeat(2, minmax(0, auto));
+        gap: 0 18px;
+    }
+    .footer-btn {
+        font-size: 0.72rem;
+    }
+
+    .seo-content {
+        padding: 22px 4px 8px;
+        margin-top: 22px;
+        font-size: 0.8rem;
+    }
+
+    .top-buttons {
+        margin-bottom: 14px;
+    }
+    .theme-toggle {
+        width: 34px;
+        height: 34px;
+        font-size: 0.86rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .chip-label i {
+        display: none;
+    }
+    .config-chip .time-input {
+        font-size: 1.3rem;
+        width: 44px;
+    }
+}
+
+@media (min-width: 768px) {
+    .modal {
+        border-radius: 20px;
+    }
+}
+
+@media (max-height: 540px) and (orientation: landscape) {
+    .brand {
+        margin-bottom: 12px;
+    }
+    .brand-mark {
+        display: none;
+    }
+    .brand::after {
+        display: none;
+    }
+    .brand h1 {
+        font-size: 1.55rem;
+    }
+    .config-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .countdown {
+        padding: 14px 16px 16px;
+        border-radius: 18px;
+    }
+    .countdown-head {
+        margin-bottom: 0;
+    }
+    .estado {
+        padding: 5px 12px;
+        font-size: 0.56rem;
+    }
+    .countdown-icon-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .timer-ring {
+        width: 164px;
+        margin: 0 auto 6px;
+    }
+    #countdown-text,
+    #descanso-time {
+        font-size: 2rem;
+    }
+    .phase-hint {
+        margin-top: 5px;
+        font-size: 0.52rem;
+    }
+
+    .cycle-dots,
+    .shortcut-hint {
+        display: none;
+    }
+
+    .controls {
+        margin: 10px 0 4px;
+    }
+    .control-btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 0.82rem;
+    }
+    .info-ciclo {
+        margin-top: 8px;
+    }
+
+    .ambient-controls {
+        margin-top: 10px;
+        padding: 10px 14px;
+    }
+
+    .footer-nav {
+        padding: 10px 12px 16px;
+    }
+}
+
+/* ── Acentos ambientales (se mantienen al final para ganar la cascada) ── */
+body.amb-rain,
+html:not(.light) body.amb-rain { --accent-work: #2a6fa5; }
+
+body.amb-pink,
+html:not(.light) body.amb-pink { --accent-work: #a82f5c; }
+
+body.amb-white,
+html:not(.light) body.amb-white { --accent-work: #6f6f6f; }
+
+body.amb-forest,
+html:not(.light) body.amb-forest { --accent-work: #3a6e39; }
+
+body.amb-ocean,
+html:not(.light) body.amb-ocean { --accent-work: #235789; }
+
+/* ── Movimiento reducido (capa elegante) ──────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .start-btn,
+    .control-btn,
+    .preset-btn,
+    .footer-btn,
+    .footer-btn::after,
+    .fin-btn,
+    .timer-ring-progress {
+        transition: none;
+    }
+    .fin-screen {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+    .countdown {
+        animation: none;
+    }
+}
